@@ -1,6 +1,6 @@
 # Molly
 
-The Qt frondend for partclone and ghost.
+The Qt frontend for partclone and ghost.
 
 ## Build and Install
 
