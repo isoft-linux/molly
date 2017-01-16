@@ -1,0 +1,3 @@
+[submodule "partclone"]
+	path = partclone
+	url = git@github.com:isoft-linux/partclone.git
