@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Michal Malek <michalm@jabster.pl>
+ * Copyright (C) 2017 Leslie Zhai <xiang.zhai@i-soft.com.cn>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@ public:
     TestPartclone();
 
 private slots:
-    void testParseOption1();
-    void testParseOption2();
+    void testParseOption1(); // -h
+    void testParseOption2(); // -d -c -s /dev/sda1 -o /data/backup/sda1.img
 };
 
 #endif // TEST_PARTCLONE_H
