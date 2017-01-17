@@ -83,3 +83,11 @@ restoring.
 $ partclone.ntfs -L sdb1-restore.log -d -r -s sdb1.img -o /dev/sdb1
 ```
 
+## dd
+
+disk2disk
+
+```
+$ dd if=/dev/sdb of=/dev/sdc bs=4096 conv=noerror,sync
+```
+
