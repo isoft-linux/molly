@@ -83,11 +83,29 @@ restoring.
 $ partclone.ntfs -L sdb1-restore.log -d -r -s sdb1.img -o /dev/sdb1
 ```
 
-## dd
+## disk2disk
 
-disk2disk
+Ghost
 
 ```
-$ dd if=/dev/sdb of=/dev/sdc bs=4096 conv=noerror,sync
+$ parted -s /dev/sda -- unit B print > sda.parted.txt
+$ dd if=/dev/sda of=sda.start.bin count=256 bs=4096
+$ partclone.ntfs -L sda1-clone.log -d -c -s /dev/sda1 -o sda1.img
+$ partclone.ext4 -L sda2-clong.log -d -c -s /dev/sda2 -o sda2.img
+.
+.
+.
+```
+
+Restore
+
+```
+$ dd if=sda.start.bin of=/dev/sda
+$ partclone.ntfs -L sda1-restore.log -d -r -s sda1.img -o /dev/sda1 
+$ partclone.ext4 -L sda2-restore.log -d -r -s sda2.img -o /dev/sda2
+.
+.
+.
+$ mkswap /dev/sdaN
 ```
 
