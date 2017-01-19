@@ -4,6 +4,8 @@ Coverage:
 * partition -clone-to-> file
 * file -restore-to-> partition
 * partition -to-> partition
+* disk -to-> file
+* file -to-> disk
 * disk -to-> disk
 
 ## QEMU
@@ -109,3 +111,30 @@ $ partclone.ext4 -L sda2-restore.log -d -r -s sda2.img -o /dev/sda2
 $ mkswap /dev/sdaN
 ```
 
+## Fuzzer
+
+/dev/sda5       976M  629M  281M   70%
+/dev/sda6       2.0G  1.3G  503M   73%
+
+```
+$ partclone.ext4 -L fail.log -d -r -s sda6.img -o /dev/sda5
+Partclone v0.2.89 http://partclone.org
+Starting to restore image (sda6.img) to device (/dev/sda5)
+You are not logged as root. You may have "access denied" errors when working.
+Reading Super Block
+Calculating bitmap... Please wait... Target partition size(1074 MB) is smaller than source(2148 MB). Use option -C to disable size checking(Dangerous).
+```
+
+/dev/sda5       976M  629M  281M   70%
+/dev/sda6       2.0G   31M  1.8G    2%
+
+```
+$ partclone.ext4 -C -L fail.log -d -r -s sda6.img -o /dev/sda5
+Partclone v0.2.89 http://partclone.org
+Starting to restore image (sda6.img) to device (/dev/sda5)
+You are not logged as root. You may have "access denied" errors when working.
+Reading Super Block
+Calculating bitmap... Please wait... Target partition size(1074 MB) is smaller than source(2148 MB). Use option -C to disable size checking(Dangerous).
+```
+
+/dev/sda5 damaged!
