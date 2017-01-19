@@ -138,3 +138,12 @@ Calculating bitmap... Please wait... Target partition size(1074 MB) is smaller t
 ```
 
 /dev/sda5 damaged!
+
+```
+$ partclone.ext4 -L /tmp/tmp.log -d -b -s /dev/sda6 -o /dev/sda5
+```
+
+also /dev/sda5 damaged!
+
+***NOTE***: If device (/dev/sda6) is mounted (at /mnt), partclone can not clone or restore partition or disk.
+
