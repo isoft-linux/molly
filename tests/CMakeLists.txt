@@ -1,14 +1,14 @@
-add_executable(test-partclone
-    test-partclone.cpp
+add_executable(test-extfs-clone
+    test-extfs-clone.cpp
     ${CMAKE_SOURCE_DIR}/partclone/src/progress.c
     ${CMAKE_SOURCE_DIR}/partclone/src/partclone.c
     ${CMAKE_SOURCE_DIR}/partclone/src/checksum.c
     ${CMAKE_SOURCE_DIR}/partclone/src/extfsclone.c)
-target_include_directories(test-partclone PRIVATE
+target_include_directories(test-extfs-clone PRIVATE
     ${CMAKE_SOURCE_DIR}/partclone/src
     ${CMAKE_SOURCE_DIR}/partclone)
-target_link_libraries(test-partclone
+target_link_libraries(test-extfs-clone
     Qt5::Core
     ${LIBNCURSESW_LIBRARIES}
     ${LIBE2FSPROGS_LIBRARIES})
-add_test(test-partclone test-partclone)
+add_test(test-extfs-clone test-extfs-clone)

@@ -44,15 +44,15 @@ int main(int argc, char *argv[])
     unsigned long long copied;
     unsigned long long block_id;
     int done;
-	char *source;			/// source data
-	char *target;			/// target data
-	int dfr, dfw;		/// file descriptor for source and target
-	int r_size, w_size;		/// read and write size
-	unsigned cs_size = 0;		/// checksum_size
+	char *source;
+	char *target;
+	int dfr, dfw;
+	int r_size, w_size;
+	unsigned cs_size = 0;
 	int cs_reseed = 1;
-	int start, stop;		/// start, range, stop number for progress bar
-	unsigned long *bitmap = NULL;		/// the point for bitmap data
-	int debug = 0;		/// debug level
+	int start, stop;
+	unsigned long *bitmap = NULL;
+	int debug = 0;
 	int tui = 0;
 	int pui = 0;
 
@@ -65,11 +65,19 @@ int main(int argc, char *argv[])
 		"* data as possible!                                                     *\n"
 		"*************************************************************************\n";
 
-    const char *argV[] = { "partclone", "-L", "/tmp/test-partclone-clone.log", "-d", "-c", "-s", "/dev/sda1", "-o", "/share/backup/sda1.img" };
+    const char *argV[] = { "partclone.ext4", 
+                           "-L", 
+                           "/share/backup/test.log", 
+                           "-d", 
+                           "-c", 
+                           "-s", 
+                           argv[1] ? argv[1] : "/dev/sda1", 
+                           "-o", 
+                           "/share/backup/test.img" };
     int argC = sizeof(argV) / sizeof(char *);
     qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << argC;
 
-	file_system_info fs_info;   /// description of the file system
+	file_system_info fs_info;
 	image_options    img_opt;
 
 	init_fs_info(&fs_info);
@@ -84,12 +92,7 @@ int main(int argc, char *argv[])
 
 	open_log(opt.logfile);
 
-    if (opt.ncurses) {
-	    pui = NCURSES;
-	    log_mesg(1, 0, 0, debug, "Using Ncurses User Interface mode.\n");
-    } else 
-        pui = TEXT;
-
+    pui = TEXT;
 	tui = open_pui(pui, opt.fresh);
 	if ((opt.ncurses) && (!tui)) {
 		opt.ncurses = 0;
@@ -108,13 +111,13 @@ int main(int argc, char *argv[])
 	dfr = open_source(source, &opt);
 	if (dfr == -1) {
 		log_mesg(0, 1, 1, debug, "Error exit\n");
-        return -1;
+        goto cleanup;
 	}
 
 	dfw = open_target(target, &opt);
 	if (dfw == -1) {
 		log_mesg(0, 1, 1, debug, "Error exit\n");
-        return -1;
+        goto cleanup;
 	}
 
 	if (opt.clone) {
@@ -132,29 +135,30 @@ int main(int argc, char *argv[])
 		log_mesg(0, 0, 1, debug, "Reading Super Block\n");
 
 		read_super_blocks(source, &fs_info);
+        if (fs_info.block_size == 0 || fs_info.block_size == -1) {
+            qWarning() << "ERROR:" << __PRETTY_FUNCTION__ << "Invalid block size";
+            goto cleanup;
+        }
 
 		if (img_opt.checksum_mode != CSM_NONE && img_opt.blocks_per_checksum == 0) {
-
 			const unsigned int buffer_capacity = opt.buffer_size > fs_info.block_size
-				? opt.buffer_size / fs_info.block_size : 1; // in blocks
+				? opt.buffer_size / fs_info.block_size : 1;
 
 			img_opt.blocks_per_checksum = buffer_capacity;
-
 		}
 		log_mesg(1, 0, 0, debug, "%u blocks per checksum\n", img_opt.blocks_per_checksum);
 
 		check_mem_size(fs_info, img_opt, opt);
 
-		/// alloc a memory to store bitmap
 		bitmap = pc_alloc_bitmap(fs_info.totalblock);
 		if (bitmap == NULL) {
 			log_mesg(0, 1, 1, debug, "%s, %i, not enough memory\n", __func__, __LINE__);
-		}
+            goto cleanup;
+        }
 
 		log_mesg(2, 0, 0, debug, "initial main bitmap pointer %p\n", bitmap);
 		log_mesg(1, 0, 0, debug, "Initial image hdr - read bitmap table\n");
 
-		/// read and check bitmap from partition
 		log_mesg(0, 0, 1, debug, "Calculating bitmap... Please wait... \n");
 		read_bitmap(source, fs_info, bitmap, pui);
 		update_used_blocks_count(&fs_info, bitmap);
@@ -185,12 +189,12 @@ int main(int argc, char *argv[])
 
 	print_file_system_info(fs_info, opt);
 
-	copied = 0;				/// initial number is 0
+	copied = 0;
 
 	if (opt.clone) {
 		const unsigned long long blocks_total = fs_info.totalblock;
 		const unsigned int block_size = fs_info.block_size;
-		const unsigned int buffer_capacity = opt.buffer_size > block_size ? opt.buffer_size / block_size : 1; // in blocks
+		const unsigned int buffer_capacity = opt.buffer_size > block_size ? opt.buffer_size / block_size : 1;
 		unsigned char checksum[cs_size];
 		unsigned int blocks_in_cs, blocks_per_cs, write_size;
 		char *read_buffer, *write_buffer;
@@ -206,15 +210,16 @@ int main(int argc, char *argv[])
 
 		if (read_buffer == NULL || write_buffer == NULL) {
 			log_mesg(0, 1, 1, debug, "%s, %i, not enough memory\n", __func__, __LINE__);
+            goto cleanup;
 		}
 
-		/// read data from the first block
-		if (lseek(dfr, 0, SEEK_SET) == (off_t)-1)
+		if (lseek(dfr, 0, SEEK_SET) == (off_t)-1) {
 			log_mesg(0, 1, 1, debug, "source seek ERROR:%s\n", strerror(errno));
+            goto cleanup;
+        }
 
 		log_mesg(0, 0, 0, debug, "Total block %llu\n", blocks_total);
 
-		/// start clone partition to image file
 		log_mesg(1, 0, 0, debug, "start backup data...\n");
 
 		blocks_in_cs = 0;
@@ -222,12 +227,10 @@ int main(int argc, char *argv[])
 
 		block_id = 0;
 		do {
-			/// scan bitmap
 			unsigned long long i, blocks_skip, blocks_read;
 			unsigned int cs_added = 0, write_offset = 0;
 			off_t offset;
 
-			/// skip unused blocks
 			for (blocks_skip = 0;
 			     block_id + blocks_skip < blocks_total &&
 			     !pc_test_bit(block_id + blocks_skip, bitmap, fs_info.totalblock);
@@ -238,7 +241,6 @@ int main(int argc, char *argv[])
 			if (blocks_skip)
 				block_id += blocks_skip;
 
-			/// read blocks
 			for (blocks_read = 0;
 			     block_id + blocks_read < blocks_total && blocks_read < buffer_capacity &&
 			     pc_test_bit(block_id + blocks_read, bitmap, fs_info.totalblock);
@@ -247,8 +249,10 @@ int main(int argc, char *argv[])
 				break;
 
 			offset = (off_t)(block_id * block_size);
-			if (lseek(dfr, offset, SEEK_SET) == (off_t)-1)
+			if (lseek(dfr, offset, SEEK_SET) == (off_t)-1) {
 				log_mesg(0, 1, 1, debug, "source seek ERROR:%s\n", strerror(errno));
+                goto cleanup;
+            }
 
 			r_size = read_all(&dfr, read_buffer, blocks_read * block_size, &opt);
 			if (r_size != (int)(blocks_read * block_size)) {
@@ -257,16 +261,18 @@ int main(int argc, char *argv[])
 						memset(read_buffer, 0, blocks_read * block_size);
 						for (r_size = 0; r_size < blocks_read * block_size; r_size += PART_SECTOR_SIZE)
 							rescue_sector(&dfr, offset + r_size, read_buffer + r_size, &opt);
-					} else
+					} else {
 						log_mesg(0, 1, 1, debug, "%s", bad_sectors_warning_msg);
-				} else
+                        goto cleanup;
+                    }
+				} else {
 					log_mesg(0, 1, 1, debug, "read error: %s\n", strerror(errno));
+                    goto cleanup;
+                }
 			}
 
-			/// calculate checksum
 			log_mesg(2, 0, 0, debug, "blocks_read = %i\n", blocks_read);
 			for (i = 0; i < blocks_read; ++i) {
-
 				memcpy(write_buffer + write_offset,
 					read_buffer + i * block_size, block_size);
 
@@ -288,32 +294,32 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			/// write buffer to target
 			w_size = write_all(&dfw, write_buffer, write_offset, &opt);
-			if (w_size != write_offset)
+			if (w_size != write_offset) {
 				log_mesg(0, 1, 1, debug, "image write ERROR:%s\n", strerror(errno));
+                goto cleanup;
+            }
 
-			/// count copied block
 			copied += blocks_read;
 			log_mesg(2, 0, 0, debug, "copied = %lld\n", copied);
 
-			/// next block
 			block_id += blocks_read;
 
-			/// read or write error
-			if (r_size + cs_added * cs_size != w_size)
+			if (r_size + cs_added * cs_size != w_size) {
 				log_mesg(0, 1, 1, debug, "read(%i) and write(%i) different\n", r_size, w_size);
+                goto cleanup;
+            }
 
 		} while (1);
 
 		if (blocks_in_cs > 0) {
-
-			// Write the checksum for the latest blocks
 			log_mesg(1, 0, 0, debug, "Write the checksum for the latest blocks. size = %i\n", cs_size);
 			log_mesg(3, 0, 0, debug, "CRC = %x%x%x%x \n", checksum[0], checksum[1], checksum[2], checksum[3]);
 			w_size = write_all(&dfw, (char*)checksum, cs_size, &opt);
-			if (w_size != cs_size)
+			if (w_size != cs_size) {
 				log_mesg(0, 1, 1, debug, "image write ERROR:%s\n", strerror(errno));
+                goto cleanup;
+            }
 		}
 
 		free(write_buffer);
@@ -326,33 +332,46 @@ int main(int argc, char *argv[])
 		off_t partial_offset = INT32_MAX;
 
 		while (total_offset) {
-
 			if (partial_offset > total_offset)
 				partial_offset = total_offset;
 
-			if (lseek(dfr, partial_offset, SEEK_CUR) == (off_t)-1)
+			if (lseek(dfr, partial_offset, SEEK_CUR) == (off_t)-1) {
 				log_mesg(0, 1, 1, debug, "source seek ERROR: %s\n", strerror(errno));
+                goto cleanup;
+            }
 
 			total_offset -= partial_offset;
 		}
 
-		if (read_all(&dfr, last_block, fs_info.block_size, &opt) != fs_info.block_size)
+		if (read_all(&dfr, last_block, fs_info.block_size, &opt) != fs_info.block_size) {
 			log_mesg(0, 1, 1, debug, "ERROR: source image too short\n");
-
+            goto cleanup;
+        }
 	}
 
 	sync_data(dfw, &opt);
 	print_finish_info(opt);
 
-	close(dfr);
+cleanup:
+	if (dfr = -1) {
+        close(dfr);
+        dfr = -1;
+    }
 
-	if (dfw != -1)
+	if (dfw != -1) {
 		close(dfw);
+        dfw = -1;
+    }
 
-	free(bitmap);
-	close_pui(pui);
+	if (bitmap) {
+        free(bitmap); 
+        bitmap = NULL;
+    }
 
-	printf("Checked successfully.\n");
+	if (pui) {
+        close_pui(pui);
+        pui = 0;
+    }
 
 	if (opt.debug)
 		close_log();
