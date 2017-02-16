@@ -1,8 +1,9 @@
 # Molly
 
-The Qt frontend for partclone and dd.
+The Qt frontend for partclone and ghost.
 
 ## Build and Install
+
 ```
 git submodule init
 git submodule update --remote --rebase
@@ -10,6 +11,8 @@ git submodule update --remote --rebase
 
 ```
 cd partclone
+git checkout Molly
+git pull
 libtoolize --force --copy
 aclocal -I m4
 autoconf

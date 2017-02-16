@@ -18,7 +18,6 @@ add_definitions("-DPROJECT_VERSION=\"${PROJECT_VERSION}\"")
 
 # Definitions
 set(CMAKE_CXX_STANDARD 11)
-add_definitions(-fpermissive)
 set(DATADIR ${CMAKE_INSTALL_PREFIX}/share)
 add_definitions("-DDATADIR=\"${DATADIR}\"")
 set(LOCALEDIR ${CMAKE_INSTALL_PREFIX}/share/locale)
@@ -51,6 +50,8 @@ find_package(Qt5 REQUIRED COMPONENTS Core LinguistTools Widgets)
 if(CMAKE_BUILD_TYPE MATCHES [Dd]ebug)
     find_package(Qt5Test REQUIRED)
 endif()
+
+find_package(libe2fsprogs REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBNCURSESW REQUIRED ncursesw)
