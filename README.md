@@ -1,28 +1,11 @@
 # Molly
 
-The Qt frontend for partclone and ghost.
+Open source alternative for [Ghost](https://en.wikipedia.org/wiki/Ghost_(software)).
 
-## Build and Install
+## Dependence
 
-```
-git submodule init
-git submodule update --remote --rebase
-```
-
-```
-cd partclone
-git checkout Molly
-git pull
-libtoolize --force --copy
-aclocal -I m4
-autoconf
-autoheader
-automake --add-missing
-./configure --prefix=/usr --enable-extfs --disable-reiserfs --enable-fat \
-    --enable-hfsp --enable-btrfs --enable-ncursesw --enable-ntfs \
-    --enable-exfat --enable-f2fs --enable-minix --disable-nilfs2 --enable-xfs \
-    --sbindir=/usr/bin
-```
+* [libpartclone](https://github.com/isoft-linux/libpartclone)
+* [udisks-qt](https://github.com/isoft-linux/udisks-qt)
 
 ## Static Analyzer
 ```

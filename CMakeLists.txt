@@ -51,10 +51,8 @@ if(CMAKE_BUILD_TYPE MATCHES [Dd]ebug)
     find_package(Qt5Test REQUIRED)
 endif()
 
-find_package(libe2fsprogs REQUIRED)
-
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBNCURSESW REQUIRED ncursesw)
+pkg_check_modules(LIBPARTCLONE REQUIRED libpartclone)
 
 find_package(OpenMP)
 set_package_properties(OpenMP PROPERTIES DESCRIPTION "The OpenMP libraries"
