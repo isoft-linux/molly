@@ -4,7 +4,7 @@ Open source alternative for [Ghost](https://en.wikipedia.org/wiki/Ghost_(softwar
 
 ## Dependence
 
-* [libpartclone](https://github.com/isoft-linux/libpartclone)
+* [libpartclone](https://github.com/isoft-linux/partclone)
 * [udisks-qt](https://github.com/isoft-linux/udisks-qt)
 
 ## Static Analyzer
