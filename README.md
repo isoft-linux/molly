@@ -6,6 +6,7 @@ Open source alternative for [Ghost](https://en.wikipedia.org/wiki/Ghost_(softwar
 
 * [libpartclone](https://github.com/isoft-linux/partclone)
 * [udisks-qt](https://github.com/isoft-linux/udisks-qt)
+* [isoft-os-prober](https://github.com/isoft-linux/isoft-os-prober)
 
 ## Static Analyzer
 ```
