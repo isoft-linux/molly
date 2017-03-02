@@ -23,6 +23,20 @@
 
 #include <libpartclone.h>
 
+#define testapi
+
+#ifdef testapi
+#include <pthread.h>
+void *thread_test(void *arg);
+typedef struct {
+    partType type;
+    char *src;
+    char *dst;
+    int  overwite;
+    void *callback ;
+}test_t;
+#endif
+
 QTEST_MAIN(TestUDisksClientGui)
 
 const QString udisksDBusPathPrefix = "/org/freedesktop/UDisks2/block_devices/";
@@ -166,6 +180,9 @@ void TestUDisksClientGui::testGetDriveObjects()
         cancelBtn->setVisible(false);
         progress->setVisible(false);
         // TODO: Cancel
+#ifdef testapi
+        partCloneCancel(1);
+#endif
 
     });
     connect(cloneBtn, &QPushButton::clicked, [=]() {
@@ -176,6 +193,16 @@ void TestUDisksClientGui::testGetDriveObjects()
         cancelBtn->setVisible(true);
         progress->setVisible(true);
         // TODO: Clone
+#ifdef testapi
+        pthread_t prog_thread;
+        test_t tstr; // use local parm to test. use malloc finally.
+        tstr.type = LIBPARTCLONE_EXTFS;
+        tstr.src = "/dev/sda7";
+        tstr.dst = "/home/test/gits/test/sda7.img";
+        tstr.overwite = 0;
+        tstr.callback = NULL;
+        int ret = pthread_create(&prog_thread, NULL, thread_test, (void *)&tstr);
+#endif
 
     });
     vbox->addWidget(progress);
@@ -212,3 +239,18 @@ void TestUDisksClientGui::testGetDriveObjects()
 
     dlg->exec();
 }
+#ifdef testapi
+void *thread_test(void *arg)
+{
+    test_t *p = (test_t *)arg;
+    printf("\nin thread!\n");
+    partClone(p->type,
+          p->src,
+          p->dst,
+          p->overwite,
+          NULL,
+          NULL);
+
+    pthread_detach(pthread_self());
+}
+#endif
