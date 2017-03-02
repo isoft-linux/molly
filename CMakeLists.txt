@@ -46,13 +46,14 @@ if(NOT DEFINED CMAKE_INSTALL_LOCALSTATEDIR)
     set(CMAKE_INSTALL_LOCALSTATEDIR "/var")
 endif()
 
-find_package(Qt5 REQUIRED COMPONENTS Core LinguistTools Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Core LinguistTools Widgets DBus)
 if(CMAKE_BUILD_TYPE MATCHES [Dd]ebug)
     find_package(Qt5Test REQUIRED)
 endif()
+find_package(udisks2qt5 REQUIRED)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBPARTCLONE REQUIRED libpartclone)
+pkg_check_modules(LIBPARTCLONE REQUIRED partclone-0.3.5)
 
 find_package(OpenMP)
 set_package_properties(OpenMP PROPERTIES DESCRIPTION "The OpenMP libraries"
