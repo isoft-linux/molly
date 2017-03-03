@@ -23,18 +23,30 @@
 
 #include <libpartclone.h>
 
-#define testapi
+
 
 #ifdef testapi
 #include <pthread.h>
 void *thread_test(void *arg);
+static bool g_beginDoClone = false;
+static int  g_progressValue = 0;
+
 typedef struct {
     partType type;
-    char *src;
-    char *dst;
+    char src[1024];
+    char dst[1024];
     int  overwite;
     void *callback ;
 }test_t;
+static void *callback(void *arg)
+{
+    float *ret = (float *)arg;
+    //printf("callback[%0.2f]\n", (float)*ret);
+    g_progressValue = (int )*ret;
+    return NULL;
+}
+
+
 #endif
 
 QTEST_MAIN(TestUDisksClientGui)
@@ -171,7 +183,8 @@ void TestUDisksClientGui::testGetDriveObjects()
     table->setSelectionMode(QAbstractItemView::SingleSelection);
     table->setColumnCount(4);
     vbox->addWidget(table);
-    auto *progress = new QProgressBar;
+    //auto *progress = new QProgressBar;
+    progress = new QProgressBar;
     progress->setVisible(false);
     auto *cloneBtn = new QPushButton("Clone");
     auto *cancelBtn = new QPushButton("Cancel");
@@ -195,13 +208,17 @@ void TestUDisksClientGui::testGetDriveObjects()
         // TODO: Clone
 #ifdef testapi
         pthread_t prog_thread;
-        test_t tstr; // use local parm to test. use malloc finally.
-        tstr.type = LIBPARTCLONE_EXTFS;
-        tstr.src = (char *)items[0]->text().toStdString().c_str();
-        tstr.dst = (char *)(QDir::homePath() + "/test.img").toStdString().c_str();
-        tstr.overwite = 0;
-        tstr.callback = NULL;
-        int ret = pthread_create(&prog_thread, NULL, thread_test, (void *)&tstr);
+        test_t *tstr = (test_t *)malloc(sizeof(test_t));
+        if (tstr == NULL) {
+            // error;
+        }
+        memset(tstr,0,sizeof(test_t));
+        tstr->type = LIBPARTCLONE_EXTFS;
+        snprintf(tstr->src,1024,"%s",(char *)qPrintable(items[0]->text()) );
+        snprintf(tstr->dst,1024,"%s",(char *)qPrintable(QDir::homePath() + "/test.img") );
+        tstr->overwite = 0;
+        tstr->callback = (void*)callback;
+        int ret = pthread_create(&prog_thread, NULL, thread_test, (void *)tstr);
 #endif
 
     });
@@ -236,21 +253,43 @@ void TestUDisksClientGui::testGetDriveObjects()
     connect(m_UDisksClient, &UDisksClient::objectsAvailable, [=]() {
         getDriveObjects(combo, table);
     });
+#ifdef testapi
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(advanceProgressBar()));
+    timer->start(200);
+#endif
 
     dlg->exec();
 }
+
 #ifdef testapi
+void TestUDisksClientGui::advanceProgressBar()
+{
+    if (g_beginDoClone) {
+        if (g_progressValue > 0 && g_progressValue <= 100)
+        progress->setValue(g_progressValue);
+    } else
+        progress->setValue(100);
+}
+
 void *thread_test(void *arg)
 {
     test_t *p = (test_t *)arg;
-    printf("\nin thread!\n");
+    printf("\nin thread!src[%s]dst[%s]\n",p->src,p->dst);
+    if (strlen(p->dst) < 10)
+        return NULL;
+
+    g_beginDoClone = true;
+    g_progressValue = 0;
+
     partClone(p->type,
           p->src,
           p->dst,
           p->overwite,
-          NULL,
+          callback,
           NULL);
 
+    g_beginDoClone = false;
     pthread_detach(pthread_self());
 }
 #endif

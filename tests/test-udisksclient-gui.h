@@ -14,10 +14,13 @@
 #include <QtCore/QObject>
 #include <QComboBox>
 #include <QTableWidget>
+#include <QProgressBar>
 
 #include <UDisks2Qt5/UDisksClient>
 
 #include "osprober.h"
+
+#define testapi
 
 using OSProberType = org::isoftlinux::OSProber; 
 
@@ -32,10 +35,14 @@ public:
 private slots:
     void testGetDriveObjects();
 
+#ifdef testapi
+    void advanceProgressBar();
+#endif
+
 private:
     void getDriveObjects(QComboBox *combo, QTableWidget *table);
     void comboTextChanged(QComboBox *combo, QString text, QTableWidget *table);
-
+    QProgressBar *progress;
 private:
     UDisksClient *m_UDisksClient = nullptr;
     OSProberType *m_OSProber = nullptr;
