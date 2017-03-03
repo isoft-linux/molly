@@ -197,8 +197,8 @@ void TestUDisksClientGui::testGetDriveObjects()
         pthread_t prog_thread;
         test_t tstr; // use local parm to test. use malloc finally.
         tstr.type = LIBPARTCLONE_EXTFS;
-        tstr.src = "/dev/sda7";
-        tstr.dst = "/home/test/gits/test/sda7.img";
+        tstr.src = (char *)items[0]->text().toStdString().c_str();
+        tstr.dst = (char *)(QDir::homePath() + "/test.img").toStdString().c_str();
         tstr.overwite = 0;
         tstr.callback = NULL;
         int ret = pthread_create(&prog_thread, NULL, thread_test, (void *)&tstr);
