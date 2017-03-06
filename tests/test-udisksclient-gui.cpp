@@ -194,6 +194,7 @@ void TestUDisksClientGui::testGetDriveObjects()
         progress->setVisible(false);
         // TODO: Cancel
 #ifdef testapi
+        printf("\nui cancel...\n\n");
         partCloneCancel(1);
 #endif
 
@@ -207,6 +208,7 @@ void TestUDisksClientGui::testGetDriveObjects()
         progress->setVisible(true);
         // TODO: Clone
 #ifdef testapi
+        progress->setValue(0);
         pthread_t prog_thread;
         test_t *tstr = (test_t *)malloc(sizeof(test_t));
         if (tstr == NULL) {
@@ -268,8 +270,7 @@ void TestUDisksClientGui::advanceProgressBar()
     if (g_beginDoClone) {
         if (g_progressValue > 0 && g_progressValue <= 100)
         progress->setValue(g_progressValue);
-    } else
-        progress->setValue(100);
+    }
 }
 
 void *thread_test(void *arg)
@@ -290,6 +291,10 @@ void *thread_test(void *arg)
           NULL);
 
     g_beginDoClone = false;
+    if (arg) {
+        free(arg);
+        arg = NULL;
+    }
     pthread_detach(pthread_self());
 }
 #endif
