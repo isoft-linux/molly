@@ -20,6 +20,7 @@
 
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QSpacerItem>
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QPushButton>
@@ -30,10 +31,16 @@ WizardWidget::WizardWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
     auto *vbox = new QVBoxLayout;
-    auto *label = new QLabel(tr("Welcome to use iSOFT Partition or Disk clone "
-                                "and restore Assistant"));
+    auto *spacer = new QSpacerItem(width(), 120);
+    vbox->addSpacerItem(spacer);
+    auto *label = new QLabel(tr("iSOFT Partition or Disk \nclone and restore Assistant"));
     label->setAlignment(Qt::AlignHCenter);
+    QFont font = label->font();
+    font.setPixelSize(39);
+    label->setFont(font);
     vbox->addWidget(label);
+    spacer = new QSpacerItem(width(), 60);
+    vbox->addSpacerItem(spacer);
     auto *hbox = new QHBoxLayout;
     vbox->addLayout(hbox);
 	auto *cloneMenu = new QMenu;
@@ -43,15 +50,23 @@ WizardWidget::WizardWidget(QWidget *parent, Qt::WindowFlags f)
     cloneMenu->addAction(tr("Disk Clone"), [=]() {
         Q_EMIT next(DISK_CLONE);
     });
+    spacer = new QSpacerItem(130, -1);
+    hbox->addSpacerItem(spacer);
     auto *cloneBtn = new QPushButton(tr("Clone"));
+    cloneBtn->setFixedSize(115, 40);
     cloneBtn->setMenu(cloneMenu);
     hbox->addWidget(cloneBtn);
     auto *restoreMenu = new QMenu;
     restoreMenu->addAction(tr("Partition Image Restore"));
     restoreMenu->addAction(tr("Disk Image Restore"));
     auto *restoreBtn = new QPushButton(tr("Restore"));
+    restoreBtn->setFixedSize(115, 40);
     restoreBtn->setMenu(restoreMenu);
     hbox->addWidget(restoreBtn);
+    spacer = new QSpacerItem(130, -1);
+    hbox->addSpacerItem(spacer);
+    spacer = new QSpacerItem(width(), 143);
+    vbox->addSpacerItem(spacer);
     setLayout(vbox);
 }
 
