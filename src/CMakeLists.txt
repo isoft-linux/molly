@@ -1,3 +1,5 @@
+qt5_add_resources(molly_RC_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/../resources.qrc)
+
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
 )
@@ -10,6 +12,7 @@ set(molly_PART_SRCS
     diskclonewidget.cpp
     partrestorewidget.cpp
     diskrestorewidget.cpp
+    ${molly_RC_SRCS}
 )
 
 qt5_add_dbus_interface(molly_PART_SRCS

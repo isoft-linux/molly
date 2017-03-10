@@ -23,6 +23,7 @@
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QPushButton>
+#include <QPainter>
 #include <QDebug>
 
 WizardWidget::WizardWidget(QWidget *parent, Qt::WindowFlags f)
@@ -56,6 +57,13 @@ WizardWidget::WizardWidget(QWidget *parent, Qt::WindowFlags f)
 
 WizardWidget::~WizardWidget()
 {
+}
+
+void WizardWidget::paintEvent(QPaintEvent *event) 
+{
+    QPainter painter(this);
+    QImage image(":/data/background.png");
+    painter.drawImage(0, 0, image.scaled(width(), height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }
 
 #include "moc_wizardwidget.cpp"

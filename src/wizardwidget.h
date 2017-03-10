@@ -20,6 +20,7 @@
 #define WIZARD_WIDGET_H
 
 #include <QWidget>
+#include <QPaintEvent>
 
 typedef enum { 
     PARTITION_CLONE = 1, 
@@ -36,6 +37,9 @@ public:
 
 Q_SIGNALS:
     void next(CloneType type);
+
+protected:
+    void paintEvent(QPaintEvent *event);
 };
 
 #endif // WIZARD_WIDGET_H

@@ -38,6 +38,7 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
          (QApplication::desktop()->height() - height()) / 2);
 
     auto *hbox = new QHBoxLayout;
+    hbox->setContentsMargins(0, 0, 0, 0);
     setLayout(hbox);
     
     auto *stack = new QStackedWidget;
