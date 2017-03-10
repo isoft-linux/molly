@@ -4,7 +4,7 @@ set(testudisksclientgui_SRC
     test-udisksclient-gui.cpp
 )
 
-qt5_add_dbus_interface(testudisksclientgui_SRC ${CMAKE_CURRENT_SOURCE_DIR}/org.isoftlinux.OSProber.xml osprober)
+qt5_add_dbus_interface(testudisksclientgui_SRC ${CMAKE_CURRENT_SOURCE_DIR}/../data/org.isoftlinux.OSProber.xml osprober)
 
 add_executable(test-udisksclient-gui
     ${testudisksclientgui_SRC})

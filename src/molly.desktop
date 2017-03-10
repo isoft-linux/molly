@@ -1,0 +1,11 @@
+[Desktop Entry]
+GenericName=Partition or Disk clone and restore utility
+GenericName[zh_CN]=分区或磁盘备份还原工具
+Name=iSOFT Partition or Disk clone and restore Assistant
+Name[zh_CN]=普华分区磁盘备份恢复助手
+Icon=drive-harddisk
+Exec=/usr/bin/molly
+Type=Application
+Terminal=false
+StartupNotify=true
+InitialPreference=10
