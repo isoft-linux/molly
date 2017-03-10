@@ -17,15 +17,19 @@
  */
 
 #include "stepwidget.h"
+#include "wizardwidget.h"
+#include "partclonewidget.h"
+#include "diskclonewidget.h"
 
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QIcon>
 #include <QHBoxLayout>
 #include <QStackedWidget>
+#include <QDebug>
 
 StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f) 
-    : QWidget(parent, f)
+    : QWidget(parent, f) 
 {
     setWindowTitle(tr("iSOFT Partition or Disk clone and restore Assistant"));
     setWindowIcon(QIcon::fromTheme("drive-harddisk"));
@@ -33,11 +37,19 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     move((QApplication::desktop()->width() - width()) / 2, 
          (QApplication::desktop()->height() - height()) / 2);
 
-    QHBoxLayout *hbox = new QHBoxLayout;
+    auto *hbox = new QHBoxLayout;
     setLayout(hbox);
-
-    QStackedWidget *stack = new QStackedWidget;
-    //stack->addWidget(...);
+    
+    auto *stack = new QStackedWidget;
+    auto *wizard = new WizardWidget;
+    auto *partClone = new PartcloneWidget;
+    connect(partClone, &PartcloneWidget::back, [=]() { stack->setCurrentIndex(0); });
+    auto *diskClone = new DiskcloneWidget;
+    connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(0); });
+    stack->addWidget(wizard);       // 0
+    stack->addWidget(partClone);    // 1
+    stack->addWidget(diskClone);    // 2
+    connect(wizard, &WizardWidget::next, [=](CloneType type) { stack->setCurrentIndex(type); });
     hbox->addWidget(stack);
 }
 

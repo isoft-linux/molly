@@ -5,6 +5,11 @@ include_directories(
 set(molly_PART_SRCS
     main.cpp
     stepwidget.cpp
+    wizardwidget.cpp
+    partclonewidget.cpp
+    diskclonewidget.cpp
+    partrestorewidget.cpp
+    diskrestorewidget.cpp
 )
 
 qt5_add_dbus_interface(molly_PART_SRCS
