@@ -26,11 +26,11 @@ PartCloneWidget::PartCloneWidget(QWidget *parent, Qt::WindowFlags f)
 {
     QVBoxLayout *vbox = new QVBoxLayout;
     vbox->setAlignment(Qt::AlignHCenter);
-    auto *toFileBtn = new QPushButton(QIcon::fromTheme("media-optical"), tr("Partition to Image File"));
+    auto *toFileBtn = new QPushButton(QIcon(":/data/partition-to-file.png"), tr("Partition to Image File"));
     toFileBtn->setFixedSize(254, 49);
     connect(toFileBtn, &QPushButton::clicked, [=]() { Q_EMIT next(PARTTOFILE); });
     vbox->addWidget(toFileBtn);
-    auto *toPartBtn = new QPushButton(QIcon::fromTheme("drive-harddisk"), tr("Partition to Partition"));
+    auto *toPartBtn = new QPushButton(QIcon(":/data/partition-to-partition.png"), tr("Partition to Partition"));
     toPartBtn->setFixedSize(254, 49);
     vbox->addWidget(toPartBtn);
     auto *backBtn = new QPushButton(tr("Back"));
