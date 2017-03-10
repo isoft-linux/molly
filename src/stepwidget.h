@@ -29,6 +29,10 @@ typedef enum {
     PARTTOPART,
     DISKTOFILE,
     DISKTODISK,
+    PARTRESTORE,
+    DISKRESTORE,
+    FILETOPART,
+    FILETODISK,
 } StepType;
 
 class StepWidget : public QWidget
