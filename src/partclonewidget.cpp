@@ -19,16 +19,21 @@
 #include "partclonewidget.h"
 
 #include <QVBoxLayout>
-#include <QLabel>
 #include <QPushButton>
 
 PartcloneWidget::PartcloneWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
     QVBoxLayout *vbox = new QVBoxLayout;
-    auto *label = new QLabel(__PRETTY_FUNCTION__);
-    vbox->addWidget(label);
+    vbox->setAlignment(Qt::AlignHCenter);
+    auto *toFileBtn = new QPushButton(QIcon::fromTheme("media-optical"), tr("Partition to Image File"));
+    toFileBtn->setFixedSize(254, 49);
+    vbox->addWidget(toFileBtn);
+    auto *toPartBtn = new QPushButton(QIcon::fromTheme("drive-harddisk"), tr("Partition to Partition"));
+    toPartBtn->setFixedSize(254, 49);
+    vbox->addWidget(toPartBtn);
     auto *backBtn = new QPushButton(tr("Back"));
+    backBtn->setFixedSize(254, 49);
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     vbox->addWidget(backBtn);
     setLayout(vbox);
