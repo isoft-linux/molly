@@ -44,12 +44,8 @@ WizardWidget::WizardWidget(QWidget *parent, Qt::WindowFlags f)
     auto *hbox = new QHBoxLayout;
     vbox->addLayout(hbox);
 	auto *cloneMenu = new QMenu;
-    cloneMenu->addAction(tr("Partition Clone"), [=]() {
-        Q_EMIT next(PARTITION_CLONE);
-    });
-    cloneMenu->addAction(tr("Disk Clone"), [=]() {
-        Q_EMIT next(DISK_CLONE);
-    });
+    cloneMenu->addAction(tr("Partition Clone"), [=]() { Q_EMIT next(PARTCLONE); });
+    cloneMenu->addAction(tr("Disk Clone"), [=]() { Q_EMIT next(DISKCLONE); });
     spacer = new QSpacerItem(130, -1);
     hbox->addSpacerItem(spacer);
     auto *cloneBtn = new QPushButton(tr("Clone"));

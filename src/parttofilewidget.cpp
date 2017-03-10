@@ -16,32 +16,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include "partclonewidget.h"
+#include "parttofilewidget.h"
 
 #include <QVBoxLayout>
+#include <QLabel>
 #include <QPushButton>
 
-PartCloneWidget::PartCloneWidget(QWidget *parent, Qt::WindowFlags f)
+PartToFileWidget::PartToFileWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
     QVBoxLayout *vbox = new QVBoxLayout;
-    vbox->setAlignment(Qt::AlignHCenter);
-    auto *toFileBtn = new QPushButton(QIcon::fromTheme("media-optical"), tr("Partition to Image File"));
-    toFileBtn->setFixedSize(254, 49);
-    connect(toFileBtn, &QPushButton::clicked, [=]() { Q_EMIT next(PARTTOFILE); });
-    vbox->addWidget(toFileBtn);
-    auto *toPartBtn = new QPushButton(QIcon::fromTheme("drive-harddisk"), tr("Partition to Partition"));
-    toPartBtn->setFixedSize(254, 49);
-    vbox->addWidget(toPartBtn);
+    auto *label = new QLabel(__PRETTY_FUNCTION__);
+    vbox->addWidget(label);
     auto *backBtn = new QPushButton(tr("Back"));
-    backBtn->setFixedSize(254, 49);
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     vbox->addWidget(backBtn);
     setLayout(vbox);
 }
 
-PartCloneWidget::~PartCloneWidget()
+PartToFileWidget::~PartToFileWidget()
 {
 }
 
-#include "moc_partclonewidget.cpp"
+#include "moc_parttofilewidget.cpp"

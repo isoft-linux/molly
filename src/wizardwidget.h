@@ -22,10 +22,7 @@
 #include <QWidget>
 #include <QPaintEvent>
 
-typedef enum { 
-    PARTITION_CLONE = 1, 
-    DISK_CLONE 
-} CloneType;
+#include "stepwidget.h"
 
 class WizardWidget : public QWidget
 {
@@ -36,7 +33,7 @@ public:
     virtual ~WizardWidget();
 
 Q_SIGNALS:
-    void next(CloneType type);
+    void next(StepType type);
 
 protected:
     void paintEvent(QPaintEvent *event);

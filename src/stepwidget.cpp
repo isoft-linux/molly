@@ -20,6 +20,7 @@
 #include "wizardwidget.h"
 #include "partclonewidget.h"
 #include "diskclonewidget.h"
+#include "parttofilewidget.h"
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -43,14 +44,18 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     
     auto *stack = new QStackedWidget;
     auto *wizard = new WizardWidget;
-    auto *partClone = new PartcloneWidget;
-    connect(partClone, &PartcloneWidget::back, [=]() { stack->setCurrentIndex(0); });
+    connect(wizard, &WizardWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
+    auto *partClone = new PartCloneWidget;
+    connect(partClone, &PartCloneWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
+    connect(partClone, &PartCloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
     auto *diskClone = new DiskcloneWidget;
-    connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(0); });
+    connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
+    auto *partToFile = new PartToFileWidget;
+    connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
     stack->addWidget(wizard);       // 0
     stack->addWidget(partClone);    // 1
     stack->addWidget(diskClone);    // 2
-    connect(wizard, &WizardWidget::next, [=](CloneType type) { stack->setCurrentIndex(type); });
+    stack->addWidget(partToFile);   // 3
     hbox->addWidget(stack);
 }
 

@@ -16,31 +16,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STEP_WIDGET_H
-#define STEP_WIDGET_H
+#ifndef PARTTOFILE_WIDGET_H
+#define PARTTOFILE_WIDGET_H
 
 #include <QWidget>
 
-typedef enum {
-    WIZARD = 0,
-    PARTCLONE,
-    DISKCLONE,
-    PARTTOFILE,
-    PARTTOPART,
-    DISKTOFILE,
-    DISKTODISK,
-} StepType;
-
-class StepWidget : public QWidget
+class PartToFileWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit StepWidget(int argc, 
-                        char **argv, 
-                        QWidget *parent = Q_NULLPTR, 
-                        Qt::WindowFlags f = Qt::CustomizeWindowHint | Qt::WindowCloseButtonHint);
-    virtual ~StepWidget();
+    explicit PartToFileWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    virtual ~PartToFileWidget();
+
+Q_SIGNALS:
+    void back();
+    void next();
 };
 
-#endif // STEP_WIDGET_H
+#endif // PARTTOFILE_WIDGET_H

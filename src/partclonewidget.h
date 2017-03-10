@@ -21,17 +21,19 @@
 
 #include <QWidget>
 
-class PartcloneWidget : public QWidget
+#include "stepwidget.h"
+
+class PartCloneWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit PartcloneWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
-    virtual ~PartcloneWidget();
+    explicit PartCloneWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    virtual ~PartCloneWidget();
 
 Q_SIGNALS:
     void back();
-    void next();
+    void next(StepType type);
 };
 
 #endif // PARTCLONE_WIDGET_H
