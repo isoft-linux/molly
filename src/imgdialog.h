@@ -20,16 +20,63 @@
 #define IMG_DIALOG_H
 
 #include <QDialog>
+#include <QListWidget>
+#include <QTableWidget>
 
+#include <UDisks2Qt5/UDisksClient>
+
+class PrevWidget;
+class NextWidget;
 class ImgDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit ImgDialog(QString title, 
+    explicit ImgDialog(QMap<QString, QString> OSMap, 
+                       QString title, 
                        QWidget *parent = Q_NULLPTR, 
                        Qt::WindowFlags f = Qt::Dialog);
     virtual ~ImgDialog();
+
+private:
+    void getDriveObjects();
+
+    UDisksClient *m_UDisksClient = Q_NULLPTR;
+    QMap<QString, QString> m_OSMap;
+    PrevWidget *m_prev = Q_NULLPTR;
+    NextWidget *m_next = Q_NULLPTR;
+};
+
+class PrevWidget : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit PrevWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    virtual ~PrevWidget();
+
+Q_SIGNALS:
+    void next(QString text);
+
+friend class ImgDialog;
+private:
+    QListWidget *list = Q_NULLPTR;
+};
+
+class NextWidget : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit NextWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    virtual ~NextWidget();
+
+Q_SIGNALS:
+    void prev();
+
+friend class ImgDialog;
+private:
+    QTableWidget *table = Q_NULLPTR;
 };
 
 #endif // IMG_DIALOG_H

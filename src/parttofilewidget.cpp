@@ -35,7 +35,7 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
       m_OSProber(OSProber)
 {
     m_UDisksClient = new UDisksClient;
-    m_UDisksClient->init();
+    m_UDisksClient->init(); // Don't forget this!
     connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
         m_OSMap.clear();
@@ -68,7 +68,8 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     m_browseBtn = new QPushButton(tr("Browse"));
     connect(m_browseBtn, &QPushButton::clicked, [=]() {
-        auto *imgDlg = new ImgDialog(tr("Choose a Partition to save the image"));
+        auto *imgDlg = new ImgDialog(m_OSMap, 
+            tr("Choose a Partition to save the image"));
         imgDlg->show();
     });
     m_browseBtn->setEnabled(false);
@@ -202,10 +203,10 @@ void PartToFileWidget::getDriveObjects()
 
     for (const UDisksObject::Ptr drvPtr : m_UDisksClient->getObjects(UDisksObject::Drive)) {
         UDisksDrive *drv = drvPtr->drive();
-        if (drv == nullptr)
+        if (!drv)
             continue;
         UDisksBlock *blk = drv->getBlock();
-        if (blk == nullptr)
+        if (!blk)
             continue;
         m_combo->addItem(blk->preferredDevice());
     }
