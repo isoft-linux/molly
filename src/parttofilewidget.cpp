@@ -17,11 +17,11 @@
  */
 
 #include "parttofilewidget.h"
+#include "imgdialog.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
 #include <QLineEdit>
 #include <QHeaderView>
 
@@ -66,19 +66,31 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_browseBtn = new QPushButton(tr("Browse"));
+    connect(m_browseBtn, &QPushButton::clicked, [=]() {
+        auto *imgDlg = new ImgDialog(tr("Choose a Partition to save the image"));
+        imgDlg->show();
+    });
+    m_browseBtn->setEnabled(false);
+    connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        if (items.size()) {
+            m_browseBtn->setEnabled(true);
+        }
+    });
     vbox->addWidget(m_table);
     hbox = new QHBoxLayout;
     label = new QLabel(tr("Partition image save path:"));
     hbox->addWidget(label);
     auto *edit = new QLineEdit;
     hbox->addWidget(edit);
-    auto *browseBtn = new QPushButton(tr("Browse"));
-    hbox->addWidget(browseBtn);
+    hbox->addWidget(m_browseBtn);
     vbox->addLayout(hbox);
     hbox = new QHBoxLayout;
-    auto *cloneBtn = new QPushButton(tr("Clone"));
-    connect(cloneBtn, &QPushButton::clicked, [=]() {});
-    hbox->addWidget(cloneBtn);
+    m_cloneBtn = new QPushButton(tr("Clone"));
+    m_cloneBtn->setEnabled(false);
+    connect(m_cloneBtn, &QPushButton::clicked, [=]() {});
+    hbox->addWidget(m_cloneBtn);
     auto *backBtn = new QPushButton(tr("Back"));
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     hbox->addWidget(backBtn);
@@ -96,6 +108,11 @@ PartToFileWidget::~PartToFileWidget()
     if (m_combo) {
         delete m_combo;
         m_combo = Q_NULLPTR;
+    }
+
+    if (m_browseBtn) {
+        delete m_browseBtn;
+        m_browseBtn = Q_NULLPTR;
     }
 }
 
@@ -116,11 +133,12 @@ bool PartToFileWidget::isPartAbleToShow(const UDisksPartition *part,
 
 void PartToFileWidget::comboTextChanged(QString text) 
 {
-    if (text.isEmpty())
-        return;
-
+    m_browseBtn->setEnabled(false);
     m_table->setRowCount(0);
     m_table->clearContents();
+
+    if (text.isEmpty())
+        return;
 
     QDBusObjectPath tblPath = QDBusObjectPath(udisksDBusPathPrefix + text.mid(5));
     QList<UDisksPartition *> parts;

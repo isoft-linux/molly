@@ -23,6 +23,7 @@
 #include <QComboBox>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QPushButton>
 
 #include <UDisks2Qt5/UDisksClient>
 #include <UDisks2Qt5/UDisksPartition>
@@ -55,6 +56,8 @@ private:
 
     QComboBox *m_combo = Q_NULLPTR;
     QTableWidget *m_table = Q_NULLPTR;
+    QPushButton *m_browseBtn = Q_NULLPTR;
+    QPushButton *m_cloneBtn = Q_NULLPTR;
     OSProberType *m_OSProber = Q_NULLPTR;
     UDisksClient *m_UDisksClient = Q_NULLPTR;
     QMap<QString, QString> m_OSMap;

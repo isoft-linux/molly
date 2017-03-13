@@ -10,6 +10,7 @@ set(molly_PART_SRCS
     wizardwidget.cpp
     partclonewidget.cpp
     parttofilewidget.cpp
+    imgdialog.cpp
     diskclonewidget.cpp
     partrestorewidget.cpp
     diskrestorewidget.cpp
