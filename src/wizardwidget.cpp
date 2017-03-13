@@ -38,6 +38,9 @@ WizardWidget::WizardWidget(QWidget *parent, Qt::WindowFlags f)
     QFont font = label->font();
     font.setPixelSize(39);
     label->setFont(font);
+    QPalette palette = label->palette();
+    palette.setColor(QPalette::Foreground, Qt::black);
+    label->setPalette(palette);
     vbox->addWidget(label);
     spacer = new QSpacerItem(width(), 60);
     vbox->addSpacerItem(spacer);

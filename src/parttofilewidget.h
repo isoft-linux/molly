@@ -20,6 +20,8 @@
 #define PARTTOFILE_WIDGET_H
 
 #include <QWidget>
+#include <QComboBox>
+#include <QTableWidget>
 
 class PartToFileWidget : public QWidget
 {
@@ -32,6 +34,10 @@ public:
 Q_SIGNALS:
     void back();
     void next();
+
+private:
+    QComboBox *m_combo = Q_NULLPTR;
+    QTableWidget *m_table = Q_NULLPTR;
 };
 
 #endif // PARTTOFILE_WIDGET_H

@@ -19,23 +19,48 @@
 #include "parttofilewidget.h"
 
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QLineEdit>
 
 PartToFileWidget::PartToFileWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
-    QVBoxLayout *vbox = new QVBoxLayout;
-    auto *label = new QLabel(__PRETTY_FUNCTION__);
-    vbox->addWidget(label);
+    auto *vbox = new QVBoxLayout;
+    auto *hbox = new QHBoxLayout;
+    auto *label = new QLabel(tr("Please choose the Disk:"));
+    hbox->addWidget(label);
+    m_combo = new QComboBox;
+    hbox->addWidget(m_combo);
+    vbox->addLayout(hbox);
+    m_table = new QTableWidget;
+    vbox->addWidget(m_table);
+    hbox = new QHBoxLayout;
+    label = new QLabel(tr("Partition image save path:"));
+    hbox->addWidget(label);
+    auto *edit = new QLineEdit;
+    hbox->addWidget(edit);
+    auto *browseBtn = new QPushButton(tr("Browse"));
+    hbox->addWidget(browseBtn);
+    vbox->addLayout(hbox);
+    hbox = new QHBoxLayout;
+    auto *cloneBtn = new QPushButton(tr("Clone"));
+    connect(cloneBtn, &QPushButton::clicked, [=]() {});
+    hbox->addWidget(cloneBtn);
     auto *backBtn = new QPushButton(tr("Back"));
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
-    vbox->addWidget(backBtn);
+    hbox->addWidget(backBtn);
+    vbox->addLayout(hbox);
     setLayout(vbox);
 }
 
 PartToFileWidget::~PartToFileWidget()
 {
+    if (m_combo) {
+        delete m_combo;
+        m_combo = Q_NULLPTR;
+    }
 }
 
 #include "moc_parttofilewidget.cpp"
