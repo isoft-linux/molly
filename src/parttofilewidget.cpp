@@ -34,6 +34,13 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     : QWidget(parent, f), 
       m_OSProber(OSProber)
 {
+    connect(m_OSProber, &OSProberType::Found, 
+        [this](const QString &part, const QString &name, const QString &shortname) {
+        m_OSMap[part] = name;
+    });
+    connect(m_OSProber, &OSProberType::Finished, [=]() { getDriveObjects(); });
+    m_OSProber->Probe();
+
     m_UDisksClient = new UDisksClient;
     m_UDisksClient->init(); // Don't forget this!
     connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
@@ -41,13 +48,11 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
         m_OSMap.clear();
         m_OSProber->Probe();
     });
-
     connect(m_UDisksClient, &UDisksClient::objectRemoved, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
         m_OSMap.clear();
         m_OSProber->Probe();
     });
-
     connect(m_UDisksClient, &UDisksClient::objectsAvailable, [=]() {
         getDriveObjects();
     });
