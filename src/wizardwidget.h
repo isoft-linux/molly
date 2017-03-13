@@ -19,6 +19,7 @@
 #ifndef WIZARD_WIDGET_H
 #define WIZARD_WIDGET_H
 
+#include <QtGlobal>
 #include <QWidget>
 #include <QPaintEvent>
 
@@ -34,6 +35,12 @@ public:
 
 Q_SIGNALS:
     void next(StepType type);
+
+#if QT_VERSION < 0x050600
+private Q_SLOTS:
+    void slotNextPartClone();
+    void slotNextDiskClone();
+#endif
 
 protected:
     void paintEvent(QPaintEvent *event);

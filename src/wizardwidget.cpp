@@ -18,6 +18,7 @@
 
 #include "wizardwidget.h"
 
+#include <QtGlobal>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QSpacerItem>
@@ -47,8 +48,13 @@ WizardWidget::WizardWidget(QWidget *parent, Qt::WindowFlags f)
     auto *hbox = new QHBoxLayout;
     vbox->addLayout(hbox);
 	auto *cloneMenu = new QMenu;
+#if QT_VERSION >= 0x050600
     cloneMenu->addAction(tr("Partition Clone"), [=]() { Q_EMIT next(PARTCLONE); });
     cloneMenu->addAction(tr("Disk Clone"), [=]() { Q_EMIT next(DISKCLONE); });
+#else
+    cloneMenu->addAction(tr("Partition Clone"), this, SLOT(slotNextPartClone()));
+    cloneMenu->addAction(tr("Disk Clone"), this, SLOT(slotNextDiskClone()));
+#endif
     spacer = new QSpacerItem(130, -1);
     hbox->addSpacerItem(spacer);
     auto *cloneBtn = new QPushButton(tr("Clone"));
@@ -72,6 +78,18 @@ WizardWidget::WizardWidget(QWidget *parent, Qt::WindowFlags f)
 WizardWidget::~WizardWidget()
 {
 }
+
+#if QT_VERSION < 0x050600
+void WizardWidget::slotNextPartClone() 
+{
+    Q_EMIT next(PARTCLONE);
+}
+
+void WizardWidget::slotNextDiskClone() 
+{
+    Q_EMIT next(DISKCLONE);
+}
+#endif
 
 void WizardWidget::paintEvent(QPaintEvent *event) 
 {
