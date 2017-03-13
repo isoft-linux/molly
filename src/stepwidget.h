@@ -21,6 +21,7 @@
 
 #include <QWidget>
 
+// TODO: add your own widget (add to stack) order here
 typedef enum {
     WIZARD = 0,
     PARTCLONE,

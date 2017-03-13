@@ -52,10 +52,12 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
     auto *partToFile = new PartToFileWidget;
     connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
+    // TODO: add your own widget here
     stack->addWidget(wizard);       // 0
     stack->addWidget(partClone);    // 1
     stack->addWidget(diskClone);    // 2
     stack->addWidget(partToFile);   // 3
+    // for example, stack->addWidget(diskToFile);
     hbox->addWidget(stack);
 }
 
