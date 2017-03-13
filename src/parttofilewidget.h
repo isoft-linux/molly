@@ -22,13 +22,23 @@
 #include <QWidget>
 #include <QComboBox>
 #include <QTableWidget>
+#include <QTableWidgetItem>
+
+#include <UDisks2Qt5/UDisksClient>
+#include <UDisks2Qt5/UDisksPartition>
+#include <UDisks2Qt5/UDisksBlock>
+#include <UDisks2Qt5/UDisksFilesystem>
+
+#include "stepwidget.h"
 
 class PartToFileWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit PartToFileWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    explicit PartToFileWidget(OSProberType *OSProber, 
+                              QWidget *parent = Q_NULLPTR, 
+                              Qt::WindowFlags f = Qt::Tool);
     virtual ~PartToFileWidget();
 
 Q_SIGNALS:
@@ -36,8 +46,18 @@ Q_SIGNALS:
     void next();
 
 private:
+    void getDriveObjects();
+    void comboTextChanged(QString text);
+    bool isPartAbleToShow(const UDisksPartition *part, 
+                          UDisksBlock *blk,
+                          UDisksFilesystem *fsys, 
+                          QTableWidgetItem *item);
+
     QComboBox *m_combo = Q_NULLPTR;
     QTableWidget *m_table = Q_NULLPTR;
+    OSProberType *m_OSProber = Q_NULLPTR;
+    UDisksClient *m_UDisksClient = Q_NULLPTR;
+    QMap<QString, QString> m_OSMap;
 };
 
 #endif // PARTTOFILE_WIDGET_H

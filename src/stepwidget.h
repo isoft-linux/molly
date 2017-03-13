@@ -21,6 +21,8 @@
 
 #include <QWidget>
 
+#include "osprober.h"
+
 // TODO: add your own widget (add to stack) order here
 typedef enum {
     WIZARD = 0,
@@ -36,6 +38,10 @@ typedef enum {
     FILETODISK,
 } StepType;
 
+using OSProberType = org::isoftlinux::OSProber;
+
+const QString udisksDBusPathPrefix = "/org/freedesktop/UDisks2/block_devices/";
+
 class StepWidget : public QWidget
 {
     Q_OBJECT
@@ -46,6 +52,9 @@ public:
                         QWidget *parent = Q_NULLPTR, 
                         Qt::WindowFlags f = Qt::CustomizeWindowHint | Qt::WindowCloseButtonHint);
     virtual ~StepWidget();
+
+private:
+    OSProberType *m_OSProber = Q_NULLPTR;
 };
 
 #endif // STEP_WIDGET_H

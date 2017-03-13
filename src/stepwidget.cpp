@@ -32,6 +32,11 @@
 StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f) 
     : QWidget(parent, f) 
 {
+    m_OSProber = new OSProberType("org.isoftlinux.OSProber",
+                                  "/org/isoftlinux/OSProber",
+                                  QDBusConnection::systemBus(),
+                                  this);
+
     setWindowTitle(tr("iSOFT Partition or Disk clone and restore Assistant"));
     setWindowIcon(QIcon::fromTheme("drive-harddisk"));
     setFixedSize(625, 400);
@@ -50,7 +55,7 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     connect(partClone, &PartCloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
     auto *diskClone = new DiskcloneWidget;
     connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
-    auto *partToFile = new PartToFileWidget;
+    auto *partToFile = new PartToFileWidget(m_OSProber);
     connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
     // TODO: add your own widget here
     stack->addWidget(wizard);       // 0
@@ -63,6 +68,10 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
 
 StepWidget::~StepWidget()
 {
+    if (m_OSProber) {
+        delete m_OSProber;
+        m_OSProber = Q_NULLPTR;
+    }
 }
 
 #include "moc_stepwidget.cpp"
