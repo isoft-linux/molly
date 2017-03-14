@@ -73,9 +73,13 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     m_browseBtn = new QPushButton(tr("Browse"));
     connect(m_browseBtn, &QPushButton::clicked, [=]() {
-        auto *imgDlg = new ImgDialog(m_OSMap, 
-            tr("Choose a Partition to save the image"));
-        imgDlg->show();
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        if (items.size()) {
+            auto *imgDlg = new ImgDialog(items[0]->text(), 
+                                         m_OSMap, 
+                                         tr("Choose a Partition to save the image"));
+            imgDlg->show();
+        }
     });
     m_browseBtn->setEnabled(false);
     connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {

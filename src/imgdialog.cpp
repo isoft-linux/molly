@@ -21,9 +21,11 @@
 
 #include <QStackedWidget>
 #include <QVBoxLayout>
+#include <QLabel>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QHeaderView>
+#include <QFileDialog>
 #include <QDebug>
 
 #include <UDisks2Qt5/UDisksDrive>
@@ -31,7 +33,7 @@
 PrevWidget::PrevWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
-    QVBoxLayout *vbox = new QVBoxLayout;
+    auto *vbox = new QVBoxLayout;
     list = new QListWidget;
     vbox->addWidget(list);
     list->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
@@ -43,6 +45,9 @@ PrevWidget::PrevWidget(QWidget *parent, Qt::WindowFlags f)
         if (item)
             Q_EMIT next(item->data(Qt::WhatsThisRole).toString());
     });
+    auto *label = new QLabel(tr("<a href=\"#\">Other</a>"));
+    connect(label, &QLabel::linkActivated, [=]() { Q_EMIT other(); });
+    vbox->addWidget(label);
     setLayout(vbox);
 }
 
@@ -57,7 +62,7 @@ PrevWidget::~PrevWidget()
 NextWidget::NextWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
-    QVBoxLayout *vbox = new QVBoxLayout;
+    auto *vbox = new QVBoxLayout;
     table = new QTableWidget;
     QStringList headers {tr("Partition"), tr("Size"), tr("Type"), tr("OS")};
     table->setColumnCount(headers.size());
@@ -82,7 +87,8 @@ NextWidget::~NextWidget()
     }
 }
 
-ImgDialog::ImgDialog(QMap<QString, QString> OSMap, 
+ImgDialog::ImgDialog(QString selected, 
+                     QMap<QString, QString> OSMap, 
                      QString title, 
                      QWidget *parent, 
                      Qt::WindowFlags f)
@@ -94,12 +100,20 @@ ImgDialog::ImgDialog(QMap<QString, QString> OSMap,
     connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
     });
-
     connect(m_UDisksClient, &UDisksClient::objectRemoved, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
     });
-
     connect(m_UDisksClient, &UDisksClient::objectsAvailable, [=]() {
+        UDisksObject::Ptr selectedObj = m_UDisksClient->getObject(QDBusObjectPath(udisksDBusPathPrefix + selected.mid(5)));
+        if (selectedObj) {
+            UDisksPartition *selectedPart = selectedObj->partition();
+            if (selectedPart) {
+                m_selectedSize = selectedPart->size();
+            }
+        }
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << selected << m_selectedSize;
+#endif
         getDriveObjects();
     });
 
@@ -111,15 +125,28 @@ ImgDialog::ImgDialog(QMap<QString, QString> OSMap,
     vbox->addWidget(stack);
     m_prev = new PrevWidget;
     m_next = new NextWidget;
+    connect(m_prev, &PrevWidget::other, [=]() {
+        hide();
+        auto *dlg = new QFileDialog;
+        dlg->show();
+    });
     connect(m_prev, &PrevWidget::next, [=](QString text) { 
         stack->setCurrentIndex(1);
+        if (!m_next || !m_next->table)
+            return;
         m_next->table->setRowCount(0);
         m_next->table->clearContents();
-
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << text;
+#endif
         QDBusObjectPath tblPath = QDBusObjectPath(udisksDBusPathPrefix + text.mid(5));
         QList<UDisksPartition *> parts;
         for (const UDisksObject::Ptr partPtr : m_UDisksClient->getPartitions(tblPath)) {
             UDisksPartition *part = partPtr->partition();
+            if (selected == text + QString::number(part->number()) || 
+                part->size() < m_selectedSize) {
+                continue;
+            }
             parts << part;
         }
         qSort(parts.begin(), parts.end(), [](UDisksPartition *p1, UDisksPartition *p2) -> bool {
@@ -184,14 +211,18 @@ ImgDialog::~ImgDialog()
 
 void ImgDialog::getDriveObjects() 
 {
+    if (!m_prev || !m_prev->list)
+        return;
+
     m_prev->list->clear();
-    
     for (const UDisksObject::Ptr drvPtr : m_UDisksClient->getObjects(UDisksObject::Drive)) {
         UDisksDrive *drv = drvPtr->drive();
         if (!drv)
             continue;
         UDisksBlock *blk = drv->getBlock();
         if (!blk)
+            continue;
+        if (blk->size() < m_selectedSize)
             continue;
         auto *item = new QListWidgetItem(QIcon::fromTheme("drive-harddisk"), 
             blk->preferredDevice() + "\n" + drv->id() + "\n" + QString::number(blk->size() / 1073741824.0, 'f', 1) + " G", 

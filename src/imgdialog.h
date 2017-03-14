@@ -32,7 +32,15 @@ class ImgDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit ImgDialog(QMap<QString, QString> OSMap, 
+    /**
+     * Partition or Disk clone to Image save path Dialog.
+     *
+     * @param selected the selected Partition or Disk
+     * @param OSMap isoft-os-prober object ptr
+     * @param title the ImgDialog's windowTitle
+     */
+    explicit ImgDialog(QString selected, 
+                       QMap<QString, QString> OSMap, 
                        QString title, 
                        QWidget *parent = Q_NULLPTR, 
                        Qt::WindowFlags f = Qt::Dialog);
@@ -43,6 +51,7 @@ private:
 
     UDisksClient *m_UDisksClient = Q_NULLPTR;
     QMap<QString, QString> m_OSMap;
+    qulonglong m_selectedSize = 0;
     PrevWidget *m_prev = Q_NULLPTR;
     NextWidget *m_next = Q_NULLPTR;
 };
@@ -56,6 +65,7 @@ public:
     virtual ~PrevWidget();
 
 Q_SIGNALS:
+    void other();
     void next(QString text);
 
 friend class ImgDialog;
