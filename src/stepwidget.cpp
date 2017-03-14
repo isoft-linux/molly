@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Leslie Zhai <xiang.zhai@i-soft.com.cn>
+ * Copyright (C) 2017 fj <fujiang.zhu@i-soft.com.cn>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +22,7 @@
 #include "partclonewidget.h"
 #include "diskclonewidget.h"
 #include "parttofilewidget.h"
+#include "disktofilewidget.h"
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -55,13 +57,19 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     connect(partClone, &PartCloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
     auto *diskClone = new DiskcloneWidget;
     connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
+    connect(diskClone, &DiskcloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
     auto *partToFile = new PartToFileWidget(m_OSProber);
     connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
+    auto *diskToFile = new DiskToFileWidget(m_OSProber);
+    connect(diskToFile, &DiskToFileWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
+
     // TODO: add your own widget here
     stack->addWidget(wizard);       // 0
     stack->addWidget(partClone);    // 1
     stack->addWidget(diskClone);    // 2
     stack->addWidget(partToFile);   // 3
+    QWidget *test = new QWidget;stack->addWidget(test);
+    stack->addWidget(diskToFile);   // 5
     // for example, stack->addWidget(diskToFile);
     hbox->addWidget(stack);
 }

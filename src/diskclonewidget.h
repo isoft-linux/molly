@@ -18,7 +18,7 @@
 
 #ifndef DISKCLONE_WIDGET_H
 #define DISKCLONE_WIDGET_H
-
+#include "stepwidget.h"
 #include <QWidget>
 
 class DiskcloneWidget : public QWidget
@@ -31,7 +31,7 @@ public:
 
 Q_SIGNALS:
     void back();
-    void next();
+    void next(StepType type);
 };
 
 #endif // DISKCLONE_WIDGET_H

@@ -5,5 +5,7 @@
   <file>data/partition-to-partition.png</file>
   <file>data/partition-restore.png</file>
   <file>data/disk-restore.png</file>
+  <file>data/disk-to-file.png</file>
+  <file>data/disk-to-disk.png</file>
 </qresource>
 </RCC>

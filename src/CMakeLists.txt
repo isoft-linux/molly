@@ -14,6 +14,7 @@ set(molly_PART_SRCS
     diskclonewidget.cpp
     partrestorewidget.cpp
     diskrestorewidget.cpp
+    disktofilewidget.cpp
     ${molly_RC_SRCS}
 )
 

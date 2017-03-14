@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Leslie Zhai <xiang.zhai@i-soft.com.cn>
+ * Copyright (C) 2017 fj <fujiang.zhu@i-soft.com.cn>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,9 +27,17 @@ DiskcloneWidget::DiskcloneWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
     QVBoxLayout *vbox = new QVBoxLayout;
-    auto *label = new QLabel(__PRETTY_FUNCTION__);
-    vbox->addWidget(label);
+    vbox->setAlignment(Qt::AlignHCenter);
+    auto *toFileBtn = new QPushButton(QIcon(":/data/disk-to-file.png"), tr("Disk to Image File"));
+    toFileBtn->setFixedSize(254, 49);
+    connect(toFileBtn, &QPushButton::clicked, [=]() { Q_EMIT next(DISKTOFILE); });
+    vbox->addWidget(toFileBtn);
+    auto *toDiskBtn = new QPushButton(QIcon(":/data/disk-to-disk.png"), tr("Disk to Disk"));
+    toDiskBtn->setFixedSize(254, 49);
+    vbox->addWidget(toDiskBtn);
     auto *backBtn = new QPushButton(tr("Back"));
+    backBtn->setFixedSize(254, 49);
+
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     vbox->addWidget(backBtn);
     setLayout(vbox);
