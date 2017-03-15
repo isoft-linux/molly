@@ -24,6 +24,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QHeaderView>
+#include <QFileInfo>
 
 #include <UDisks2Qt5/UDisksObject>
 #include <UDisks2Qt5/UDisksDrive>
@@ -77,14 +78,15 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     auto *edit = new QLineEdit;
     connect(edit, &QLineEdit::textChanged, [=](const QString &text) {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
-        m_cloneBtn->setEnabled(items.size() && !text.isEmpty());
+        m_cloneBtn->setEnabled(items.size() && ImgDialog::isPathWritable(text));
     });
     connect(m_browseBtn, &QPushButton::clicked, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size()) {
             auto *dlg = new ImgDialog(items[0]->text(), 
                                       m_OSMap, 
-                                      tr("Choose a Partition to save the image"));
+                                      tr("Choose a Partition to save the image"), 
+                                      this);
             connect(dlg, &ImgDialog::savePathSelected, [=](QString path) {
                 dlg->close();
 #ifdef DEBUG

@@ -46,6 +46,7 @@ public:
                        QWidget *parent = Q_NULLPTR, 
                        Qt::WindowFlags f = Qt::Dialog);
     virtual ~ImgDialog();
+    static bool isPathWritable(QString path);
 
 Q_SIGNALS:
     void savePathSelected(QString path);

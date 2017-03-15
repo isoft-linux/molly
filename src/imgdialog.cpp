@@ -25,6 +25,7 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QDebug>
 
 #include <UDisks2Qt5/UDisksDrive>
@@ -104,15 +105,16 @@ NextWidget::NextWidget(QString selected,
                         if (mountPoints.size()) {
                             QString path;
                             if (mountPoints.contains("/")) {
-                                path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/" + mollyHideDir + "/";
+                                path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/";
                             } else {
-                                path = mountPoints[0] + "/" + mollyHideDir + "/";
+                                path = mountPoints[0] + "/";
                             }
-                            path += selected.mid(5) + "-" + QString::number(time(Q_NULLPTR)) + ".part";
+                            path += selected.mid(5) + "-" + QString::number(time(Q_NULLPTR)) + partImgExt;
 #ifdef DEBUG
                             qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << path;
 #endif
-                            Q_EMIT savePathSelected(path);
+                            if (ImgDialog::isPathWritable(path))
+                                Q_EMIT savePathSelected(path);
                         }
                     }
                 }
@@ -172,8 +174,17 @@ ImgDialog::ImgDialog(QString selected,
     m_next = new NextWidget(selected, m_UDisksClient);
     connect(m_prev, &PrevWidget::other, [=]() {
         close();
-        auto *dlg = new QFileDialog;
-        dlg->show();
+        QString path = QFileDialog::getExistingDirectory(parent, 
+                                                         tr("Open Directory"), 
+                                                         QStandardPaths::writableLocation(QStandardPaths::HomeLocation), 
+                                                         QFileDialog::ShowDirsOnly | 
+                                                         QFileDialog::DontResolveSymlinks);
+        path += "/" + selected.mid(5) + "-" + QString::number(time(Q_NULLPTR)) + partImgExt;
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << path;
+#endif
+        if (ImgDialog::isPathWritable(path))
+            Q_EMIT savePathSelected(path);
     });
     connect(m_prev, &PrevWidget::next, [=](QString text) { 
         stack->setCurrentIndex(1);
@@ -297,6 +308,16 @@ bool ImgDialog::isPartAbleToShow(const UDisksPartition *part,
 
     item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     return true;
+}
+
+bool ImgDialog::isPathWritable(QString path) 
+{
+    QFileInfo fileInfo(path);
+    QFileInfo dirInfo(fileInfo.absoluteDir().path());
+#ifdef DEBUG
+    qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << dirInfo.path();
+#endif
+    return dirInfo.isWritable();
 }
 
 #include "moc_imgdialog.cpp"
