@@ -147,7 +147,6 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
             m_progress->setVisible(false);
             m_cloneBtn->setText(tr("Clone"));
             partCloneCancel(1);
-            //pthread_cancel(m_thread);
         }
         m_isClone = !m_isClone;
     });
