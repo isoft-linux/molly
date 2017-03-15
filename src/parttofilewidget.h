@@ -50,10 +50,10 @@ friend class ImgDialog;
 private:
     void getDriveObjects();
     void comboTextChanged(QString text);
-    static bool isPartAbleToShow(const UDisksPartition *part, 
-                                 UDisksBlock *blk,
-                                 UDisksFilesystem *fsys, 
-                                 QTableWidgetItem *item);
+    bool isPartAbleToShow(const UDisksPartition *part, 
+                          UDisksBlock *blk,
+                          UDisksFilesystem *fsys, 
+                          QTableWidgetItem *item);
 
     QComboBox *m_combo = Q_NULLPTR;
     QTableWidget *m_table = Q_NULLPTR;

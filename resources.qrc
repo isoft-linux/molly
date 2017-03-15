@@ -7,5 +7,7 @@
   <file>data/disk-restore.png</file>
   <file>data/disk-to-file.png</file>
   <file>data/disk-to-disk.png</file>
+  <file>data/harddisk.png</file>
+  <file>data/usb.png</file>
 </qresource>
 </RCC>

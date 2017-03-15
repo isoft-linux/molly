@@ -41,6 +41,7 @@ typedef enum {
 using OSProberType = org::isoftlinux::OSProber;
 
 const QString udisksDBusPathPrefix = "/org/freedesktop/UDisks2/block_devices/";
+const QString mollyHideDir = ".molly";
 
 class StepWidget : public QWidget
 {

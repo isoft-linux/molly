@@ -68,7 +68,9 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     stack->addWidget(partClone);    // 1
     stack->addWidget(diskClone);    // 2
     stack->addWidget(partToFile);   // 3
-    QWidget *test = new QWidget;stack->addWidget(test);
+#ifdef DEBUG
+    auto *test = new QWidget;stack->addWidget(test);
+#endif
     stack->addWidget(diskToFile);   // 5
     // for example, stack->addWidget(diskToFile);
     hbox->addWidget(stack);

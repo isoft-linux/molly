@@ -23,7 +23,6 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QHBoxLayout>
-#include <QPushButton>
 #include <QHeaderView>
 #include <QFileDialog>
 #include <QDebug>
@@ -42,7 +41,7 @@ PrevWidget::PrevWidget(QWidget *parent, Qt::WindowFlags f)
     list->setIconSize(QSize(96, 84));
     list->setSpacing(12);
     connect(list, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
-        if (item)
+        if (item && !item->data(Qt::WhatsThisRole).isNull())
             Q_EMIT next(item->data(Qt::WhatsThisRole).toString());
     });
     auto *label = new QLabel(tr("<a href=\"#\">Other</a>"));
@@ -59,11 +58,22 @@ PrevWidget::~PrevWidget()
     }
 }
 
-NextWidget::NextWidget(QWidget *parent, Qt::WindowFlags f)
+NextWidget::NextWidget(QString selected, 
+                       UDisksClient *oUDisksClient, 
+                       QWidget *parent, 
+                       Qt::WindowFlags f)
     : QWidget(parent, f)
 {
     auto *vbox = new QVBoxLayout;
+    confirmBtn = new QPushButton(tr("Confirm"));
+    confirmBtn->setEnabled(false);
     table = new QTableWidget;
+    connect(table, &QTableWidget::itemSelectionChanged, [=]() {
+        QList<QTableWidgetItem *> items = table->selectedItems();
+        if (items.size()) {
+            confirmBtn->setEnabled(true);
+        }
+    });
     QStringList headers {tr("Partition"), tr("Size"), tr("Type"), tr("OS")};
     table->setColumnCount(headers.size());
     table->setHorizontalHeaderLabels(headers);
@@ -75,7 +85,42 @@ NextWidget::NextWidget(QWidget *parent, Qt::WindowFlags f)
     vbox->addLayout(hbox);
     auto *prevBtn = new QPushButton(tr("Previous"));
     connect(prevBtn, &QPushButton::clicked, [=]() { Q_EMIT prev(); });
+    connect(confirmBtn, &QPushButton::clicked, [=]() {
+        QList<QTableWidgetItem *> items = table->selectedItems();
+        if (items.size()) {
+            QString selectedPart = items[0]->text();
+#ifdef DEBUG
+            qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << selectedPart;
+#endif
+            if (oUDisksClient && !selectedPart.isEmpty() && !selected.isEmpty()) {
+                UDisksObject::Ptr fsysPtr = oUDisksClient->getObject(QDBusObjectPath(udisksDBusPathPrefix + selectedPart.mid(5)));
+                if (fsysPtr) {
+                    UDisksFilesystem *fsys = fsysPtr->filesystem();
+                    if (fsys) {
+                        QStringList mountPoints = fsys->mountPoints();
+#ifdef DEBUG
+                        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << mountPoints;
+#endif
+                        if (mountPoints.size()) {
+                            QString path;
+                            if (mountPoints.contains("/")) {
+                                path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/" + mollyHideDir + "/";
+                            } else {
+                                path = mountPoints[0] + "/" + mollyHideDir + "/";
+                            }
+                            path += selected.mid(5) + "-" + QString::number(time(Q_NULLPTR)) + ".part";
+#ifdef DEBUG
+                            qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << path;
+#endif
+                            Q_EMIT savePathSelected(path);
+                        }
+                    }
+                }
+            }
+        }
+    });
     hbox->addWidget(prevBtn);
+    hbox->addWidget(confirmBtn);
     setLayout(vbox);
 }
 
@@ -124,15 +169,15 @@ ImgDialog::ImgDialog(QString selected,
     auto *stack = new QStackedWidget;
     vbox->addWidget(stack);
     m_prev = new PrevWidget;
-    m_next = new NextWidget;
+    m_next = new NextWidget(selected, m_UDisksClient);
     connect(m_prev, &PrevWidget::other, [=]() {
-        hide();
+        close();
         auto *dlg = new QFileDialog;
         dlg->show();
     });
     connect(m_prev, &PrevWidget::next, [=](QString text) { 
         stack->setCurrentIndex(1);
-        if (!m_next || !m_next->table)
+        if (!m_next || !m_next->table || !m_next->confirmBtn)
             return;
         m_next->table->setRowCount(0);
         m_next->table->clearContents();
@@ -143,10 +188,6 @@ ImgDialog::ImgDialog(QString selected,
         QList<UDisksPartition *> parts;
         for (const UDisksObject::Ptr partPtr : m_UDisksClient->getPartitions(tblPath)) {
             UDisksPartition *part = partPtr->partition();
-            if (selected == text + QString::number(part->number()) || 
-                part->size() < m_selectedSize) {
-                continue;
-            }
             parts << part;
         }
         qSort(parts.begin(), parts.end(), [](UDisksPartition *p1, UDisksPartition *p2) -> bool {
@@ -164,27 +205,36 @@ ImgDialog::ImgDialog(QString selected,
             UDisksFilesystem *fsys = objPtr->filesystem();
             if (!fsys)
                 continue;
+            
+            bool isSelected = false;
+            if (selected == text + QString::number(part->number()) || 
+                part->size() < m_selectedSize) {
+                isSelected = true;
+            }
 
             m_next->table->insertRow(row);
             QString partStr = text + QString::number(part->number());
             auto *item = new QTableWidgetItem(partStr);
-            PartToFileWidget::isPartAbleToShow(part, blk, fsys, item);
+            isPartAbleToShow(part, blk, fsys, isSelected, item);
             m_next->table->setItem(row, 0, item);
 
             item = new QTableWidgetItem(QString::number(part->size() / 1073741824.0, 'f', 1) + " G");
-            PartToFileWidget::isPartAbleToShow(part, blk, fsys, item);
+            isPartAbleToShow(part, blk, fsys, isSelected, item);
             m_next->table->setItem(row, 1, item);
 
             item = new QTableWidgetItem(blk->idType());
-            PartToFileWidget::isPartAbleToShow(part, blk, fsys, item);
+            isPartAbleToShow(part, blk, fsys, isSelected, item);
             m_next->table->setItem(row, 2, item);
 
             item = new QTableWidgetItem(m_OSMap[partStr]);
-            PartToFileWidget::isPartAbleToShow(part, blk, fsys, item);
+            isPartAbleToShow(part, blk, fsys, isSelected, item);
             m_next->table->setItem(row, 3, item);
             row++;
         }
+
+        m_next->confirmBtn->setEnabled(false);
     });
+    connect(m_next, &NextWidget::savePathSelected, [=](QString path) { Q_EMIT savePathSelected(path); });
     connect(m_next, &NextWidget::prev, [=]() { stack->setCurrentIndex(0); });
     stack->addWidget(m_prev);
     stack->addWidget(m_next);
@@ -222,13 +272,31 @@ void ImgDialog::getDriveObjects()
         UDisksBlock *blk = drv->getBlock();
         if (!blk)
             continue;
-        if (blk->size() < m_selectedSize)
-            continue;
-        auto *item = new QListWidgetItem(QIcon::fromTheme("drive-harddisk"), 
+        auto *item = new QListWidgetItem(QIcon(":/data/harddisk.png"), 
             blk->preferredDevice() + "\n" + drv->id() + "\n" + QString::number(blk->size() / 1073741824.0, 'f', 1) + " G", 
             m_prev->list);
         item->setData(Qt::WhatsThisRole, blk->preferredDevice());
+        if (blk->size() < m_selectedSize) {
+            item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
+            item->setData(Qt::WhatsThisRole, QVariant());
+        }
     }
+}
+
+bool ImgDialog::isPartAbleToShow(const UDisksPartition *part, 
+                                 UDisksBlock *blk,
+                                 UDisksFilesystem *fsys,
+                                 bool isSelected, 
+                                 QTableWidgetItem *item) 
+{
+    if (!part || part->isContainer() || !blk || blk->idType() == "swap" || 
+        !fsys || fsys->mountPoints().isEmpty() || isSelected) {
+        item->setFlags(Qt::NoItemFlags);
+        return false;
+    }
+
+    item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    return true;
 }
 
 #include "moc_imgdialog.cpp"

@@ -72,13 +72,27 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     m_browseBtn = new QPushButton(tr("Browse"));
+    m_cloneBtn = new QPushButton(tr("Clone"));
+    m_cloneBtn->setEnabled(false);
+    auto *edit = new QLineEdit;
+    connect(edit, &QLineEdit::textChanged, [=](const QString &text) {
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        m_cloneBtn->setEnabled(items.size() && !text.isEmpty());
+    });
     connect(m_browseBtn, &QPushButton::clicked, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size()) {
-            auto *imgDlg = new ImgDialog(items[0]->text(), 
-                                         m_OSMap, 
-                                         tr("Choose a Partition to save the image"));
-            imgDlg->show();
+            auto *dlg = new ImgDialog(items[0]->text(), 
+                                      m_OSMap, 
+                                      tr("Choose a Partition to save the image"));
+            connect(dlg, &ImgDialog::savePathSelected, [=](QString path) {
+                dlg->close();
+#ifdef DEBUG
+                qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << path;
+#endif
+                edit->setText(path);
+            });
+            dlg->exec();
         }
     });
     m_browseBtn->setEnabled(false);
@@ -86,19 +100,17 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size()) {
             m_browseBtn->setEnabled(true);
+            edit->setText("");
         }
     });
     vbox->addWidget(m_table);
     hbox = new QHBoxLayout;
     label = new QLabel(tr("Partition image save path:"));
     hbox->addWidget(label);
-    auto *edit = new QLineEdit;
     hbox->addWidget(edit);
     hbox->addWidget(m_browseBtn);
     vbox->addLayout(hbox);
     hbox = new QHBoxLayout;
-    m_cloneBtn = new QPushButton(tr("Clone"));
-    m_cloneBtn->setEnabled(false);
     connect(m_cloneBtn, &QPushButton::clicked, [=]() {});
     hbox->addWidget(m_cloneBtn);
     auto *backBtn = new QPushButton(tr("Back"));

@@ -22,6 +22,7 @@
 #include <QDialog>
 #include <QListWidget>
 #include <QTableWidget>
+#include <QPushButton>
 
 #include <UDisks2Qt5/UDisksClient>
 
@@ -46,8 +47,16 @@ public:
                        Qt::WindowFlags f = Qt::Dialog);
     virtual ~ImgDialog();
 
+Q_SIGNALS:
+    void savePathSelected(QString path);
+
 private:
     void getDriveObjects();
+    bool isPartAbleToShow(const UDisksPartition *part, 
+                          UDisksBlock *blk,
+                          UDisksFilesystem *fsys,
+                          bool isSelected, 
+                          QTableWidgetItem *item);
 
     UDisksClient *m_UDisksClient = Q_NULLPTR;
     QMap<QString, QString> m_OSMap;
@@ -61,7 +70,8 @@ class PrevWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit PrevWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    explicit PrevWidget(QWidget *parent = Q_NULLPTR, 
+                        Qt::WindowFlags f = Qt::Tool);
     virtual ~PrevWidget();
 
 Q_SIGNALS:
@@ -78,15 +88,20 @@ class NextWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit NextWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    explicit NextWidget(QString selected, 
+                        UDisksClient *oUDisksClient, 
+                        QWidget *parent = Q_NULLPTR, 
+                        Qt::WindowFlags f = Qt::Tool);
     virtual ~NextWidget();
 
 Q_SIGNALS:
+    void savePathSelected(QString path);
     void prev();
 
 friend class ImgDialog;
 private:
     QTableWidget *table = Q_NULLPTR;
+    QPushButton *confirmBtn = Q_NULLPTR;
 };
 
 #endif // IMG_DIALOG_H
