@@ -46,7 +46,6 @@ Q_SIGNALS:
     void back();
     void next();
 
-friend class ImgDialog;
 private:
     void getDriveObjects();
     void comboTextChanged(QString text);
