@@ -25,9 +25,22 @@
 #include <QLineEdit>
 #include <QHeaderView>
 #include <QFileInfo>
+#include <QProgressBar>
 
 #include <UDisks2Qt5/UDisksObject>
 #include <UDisks2Qt5/UDisksDrive>
+
+#include <pthread.h>
+#include <libpartclone.h>
+
+static UDisksClient *m_UDisksClient = Q_NULLPTR;
+static QProgressBar *m_progress = Q_NULLPTR;
+static pthread_t m_thread;
+static QString m_part = "";
+static QString m_img = "";
+
+static void *startRoutine(void *arg);
+static void *callBack(void *arg);
 
 PartToFileWidget::PartToFileWidget(OSProberType *OSProber, 
                                    QWidget *parent, 
@@ -113,7 +126,27 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     hbox->addWidget(m_browseBtn);
     vbox->addLayout(hbox);
     hbox = new QHBoxLayout;
-    connect(m_cloneBtn, &QPushButton::clicked, [=]() {});
+    m_progress = new QProgressBar;
+    vbox->addWidget(m_progress);
+    m_progress->setVisible(false);
+    connect(m_cloneBtn, &QPushButton::clicked, [=]() {
+        if (m_isClone) {
+            QList<QTableWidgetItem *> items = m_table->selectedItems();
+            if (items.size() && ImgDialog::isPathWritable(edit->text())) {
+                m_progress->setVisible(true);
+                m_cloneBtn->setText(tr("Cancel"));
+                m_part = items[0]->text();
+                m_img = edit->text();
+                pthread_create(&m_thread, NULL, startRoutine, NULL);
+            }
+        } else {
+            m_progress->setVisible(false);
+            m_cloneBtn->setText(tr("Clone"));
+            partCloneCancel(1);
+            pthread_cancel(m_thread);
+        }
+        m_isClone = !m_isClone;
+    });
     hbox->addWidget(m_cloneBtn);
     auto *backBtn = new QPushButton(tr("Back"));
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
@@ -238,6 +271,43 @@ void PartToFileWidget::getDriveObjects()
         comboTextChanged(text);
     });
     comboTextChanged(m_combo->currentText());
+}
+
+static void *callBack(void *arg) 
+{
+    float *percent = (float *)arg;
+
+    if (m_progress)
+        m_progress->setValue((int)*percent);
+
+    return Q_NULLPTR;
+}
+
+static void *startRoutine(void *arg) 
+{
+    partType type = LIBPARTCLONE_UNKNOWN;
+    QString strType;
+
+    if (!m_UDisksClient)
+        return Q_NULLPTR;
+    UDisksObject::Ptr blkPtr = m_UDisksClient->getObject(QDBusObjectPath(udisksDBusPathPrefix + m_part.mid(5)));
+    if (!blkPtr)
+        return Q_NULLPTR;
+    UDisksBlock *blk = blkPtr->block();
+    if (!blk)
+        return Q_NULLPTR;
+    strType = blk->idType();
+    if (strType.startsWith("ext"))
+        type = LIBPARTCLONE_EXTFS;
+    else if (strType == "ntfs")
+        type = LIBPARTCLONE_NTFS;
+    // TODO: more file system test
+    partClone(type, 
+              m_part.toStdString().c_str(), 
+              m_img.toStdString().c_str(),
+              1,
+              callBack, 
+              Q_NULLPTR);
 }
 
 #include "moc_parttofilewidget.cpp"

@@ -1,6 +1,7 @@
 qt5_add_resources(molly_RC_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/../resources.qrc)
 
 include_directories(
+    ${LIBPARTCLONE_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -30,6 +31,7 @@ target_link_libraries(molly
     Qt5::Widgets
     Qt5::DBus
     udisks2-qt5
+    ${LIBPARTCLONE_LIBRARIES}
 )
 
 install(TARGETS molly RUNTIME DESTINATION bin)

@@ -32,6 +32,7 @@
 
 #include "stepwidget.h"
 
+class PartToFileThread;
 class PartToFileWidget : public QWidget
 {
     Q_OBJECT
@@ -59,8 +60,8 @@ private:
     QPushButton *m_browseBtn = Q_NULLPTR;
     QPushButton *m_cloneBtn = Q_NULLPTR;
     OSProberType *m_OSProber = Q_NULLPTR;
-    UDisksClient *m_UDisksClient = Q_NULLPTR;
     QMap<QString, QString> m_OSMap;
+    bool m_isClone = true;
 };
 
 #endif // PARTTOFILE_WIDGET_H
