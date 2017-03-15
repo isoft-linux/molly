@@ -36,6 +36,7 @@
 static UDisksClient *m_UDisksClient = Q_NULLPTR;
 static QProgressBar *m_progress = Q_NULLPTR;
 static pthread_t m_thread;
+static pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
 static QString m_part = "";
 static QString m_img = "";
 
@@ -130,6 +131,9 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     vbox->addWidget(m_progress);
     m_progress->setVisible(false);
     connect(m_cloneBtn, &QPushButton::clicked, [=]() {
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_isClone;
+#endif
         if (m_isClone) {
             QList<QTableWidgetItem *> items = m_table->selectedItems();
             if (items.size() && ImgDialog::isPathWritable(edit->text())) {
@@ -275,11 +279,11 @@ void PartToFileWidget::getDriveObjects()
 
 static void *callBack(void *arg) 
 {
+    pthread_mutex_trylock(&m_mutex);
     float *percent = (float *)arg;
-
     if (m_progress)
         m_progress->setValue((int)*percent);
-
+    pthread_mutex_unlock(&m_mutex);
     return Q_NULLPTR;
 }
 
@@ -288,6 +292,8 @@ static void *startRoutine(void *arg)
     partType type = LIBPARTCLONE_UNKNOWN;
     QString strType;
 
+    if (m_part.isEmpty() || m_img.isEmpty())
+        return Q_NULLPTR;
     if (!m_UDisksClient)
         return Q_NULLPTR;
     UDisksObject::Ptr blkPtr = m_UDisksClient->getObject(QDBusObjectPath(udisksDBusPathPrefix + m_part.mid(5)));
