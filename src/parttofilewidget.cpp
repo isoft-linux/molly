@@ -143,7 +143,7 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
             m_progress->setVisible(false);
             m_cloneBtn->setText(tr("Clone"));
             partCloneCancel(1);
-            pthread_cancel(m_thread);
+            //pthread_cancel(m_thread);
         }
         m_isClone = !m_isClone;
     });
@@ -308,6 +308,7 @@ static void *startRoutine(void *arg)
               1,
               callBack, 
               Q_NULLPTR);
+    pthread_detach(pthread_self());
 }
 
 #include "moc_parttofilewidget.cpp"
