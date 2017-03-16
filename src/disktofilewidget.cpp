@@ -45,13 +45,9 @@ DiskToFileWidget::DiskToFileWidget(OSProberType *OSProber,
     m_UDisksClient->init(); // Don't forget this!
     connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
-        m_OSMap.clear();
-        m_OSProber->Probe();
     });
     connect(m_UDisksClient, &UDisksClient::objectRemoved, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
-        m_OSMap.clear();
-        m_OSProber->Probe();
     });
     connect(m_UDisksClient, &UDisksClient::objectsAvailable, [=]() {
         getDriveObjects();

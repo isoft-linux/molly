@@ -50,19 +50,17 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
         m_OSMap[part] = name;
     });
     connect(m_OSProber, &OSProberType::Finished, [=]() { getDriveObjects(); });
+    // FIXME: os-prober might mount the partition to /var/lib/os-prober/mount 
+    // but do not let it go any more!
     m_OSProber->Probe();
 
     m_UDisksClient = new UDisksClient;
     m_UDisksClient->init(); // Don't forget this!
     connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
-        m_OSMap.clear();
-        m_OSProber->Probe();
     });
     connect(m_UDisksClient, &UDisksClient::objectRemoved, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
-        m_OSMap.clear();
-        m_OSProber->Probe();
     });
     connect(m_UDisksClient, &UDisksClient::objectsAvailable, [=]() {
         getDriveObjects();
@@ -170,6 +168,7 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     setLayout(vbox);
 
     connect(this, &PartToFileWidget::finished, [=]() {
+        m_isClone = true;
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size() > 4) {
             items[4]->setText(tr("Finished"));
@@ -207,8 +206,12 @@ bool PartToFileWidget::isPartAbleToShow(const UDisksPartition *part,
                                         UDisksFilesystem *fsys, 
                                         QTableWidgetItem *item) 
 {
+#ifdef DEBUG
+    if (fsys)
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << fsys->mountPoints();
+#endif
     if (!part || part->isContainer() || !blk || blk->idType() == "swap" || 
-        !fsys || !fsys->mountPoints().isEmpty()) {
+        !fsys || (!fsys->mountPoints().isEmpty() && !fsys->mountPoints().contains("/var/lib/os-prober/mount"))) {
         item->setFlags(Qt::NoItemFlags);
         return false;
     }
@@ -345,6 +348,8 @@ void *PartToFileWidget::startRoutine(void *arg)
         type = LIBPARTCLONE_EXTFS;
     else if (strType == "ntfs")
         type = LIBPARTCLONE_NTFS;
+    else if (strType == "vfat")
+        type = LIBPARTCLONE_FAT;
     // TODO: more file system test
     partClone(type, 
               part.toStdString().c_str(), 
