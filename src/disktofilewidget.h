@@ -24,6 +24,7 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QPushButton>
+#include <QProgressBar>
 
 #include <UDisks2Qt5/UDisksClient>
 #include <UDisks2Qt5/UDisksPartition>
@@ -50,17 +51,16 @@ friend class ImgDialog;
 private:
     void getDriveObjects();
     void comboTextChanged(QString text);
-    static bool isPartAbleToShow(const UDisksPartition *part, 
-                                 UDisksBlock *blk,
-                                 UDisksFilesystem *fsys, 
+    bool isDiskAbleToShow(bool setFlag,
                                  QTableWidgetItem *item);
 
     QTableWidget *m_table = Q_NULLPTR;
     QPushButton *m_browseBtn = Q_NULLPTR;
     QPushButton *m_cloneBtn = Q_NULLPTR;
     OSProberType *m_OSProber = Q_NULLPTR;
-    UDisksClient *m_UDisksClient = Q_NULLPTR;
     QMap<QString, QString> m_OSMap;
+    QProgressBar *m_progress;
+    bool m_isClone = true;
 };
 
 #endif // DISKTOFILE_WIDGET_H
