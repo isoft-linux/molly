@@ -52,7 +52,7 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     connect(m_OSProber, &OSProberType::Finished, [=]() { getDriveObjects(); });
     // FIXME: os-prober might mount the partition to /var/lib/os-prober/mount 
     // but do not let it go any more!
-    m_OSProber->Probe();
+    //m_OSProber->Probe();
 
     m_UDisksClient = new UDisksClient;
     m_UDisksClient->init(); // Don't forget this!

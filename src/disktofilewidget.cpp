@@ -39,7 +39,7 @@ DiskToFileWidget::DiskToFileWidget(OSProberType *OSProber,
         m_OSMap[part] = name;
     });
     connect(m_OSProber, &OSProberType::Finished, [=]() { getDriveObjects(); });
-    m_OSProber->Probe();
+    //m_OSProber->Probe();
 
     m_UDisksClient = new UDisksClient;
     m_UDisksClient->init(); // Don't forget this!
