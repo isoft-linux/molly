@@ -38,7 +38,7 @@ typedef struct {
     int  overwite;
     void *callback ;
 }test_t;
-static void *callback(void *arg)
+static void *callback(void *arg, void *r)
 {
     float *ret = (float *)arg;
     //printf("callback[%0.2f]\n", (float)*ret);
