@@ -19,11 +19,15 @@
 #include "filetodiskwidget.h"
 
 #include <QVBoxLayout>
+#include <QPushButton>
 
 FileToDiskWidget::FileToDiskWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
-    QVBoxLayout *vbox = new QVBoxLayout;
+    auto *vbox = new QVBoxLayout;
+    auto *backBtn = new QPushButton(tr("Back"));
+    connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
+    vbox->addWidget(backBtn);
     setLayout(vbox);
 }
 

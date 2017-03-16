@@ -25,7 +25,17 @@ RestoreWidget::RestoreWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
     QVBoxLayout *vbox = new QVBoxLayout;
+    vbox->setAlignment(Qt::AlignHCenter);
+    auto *partBtn = new QPushButton(QIcon(":/data/partition-restore.png"), tr("Partition Restore"));
+    partBtn->setFixedSize(254, 49);
+    connect(partBtn, &QPushButton::clicked, [=]() { Q_EMIT next(FILETOPART); });
+    vbox->addWidget(partBtn);
+    auto *diskBtn = new QPushButton(QIcon(":/data/disk-restore.png"), tr("Disk Restore"));
+    diskBtn->setFixedSize(254, 49);
+    connect(diskBtn, &QPushButton::clicked, [=]() { Q_EMIT next(FILETODISK); });
+    vbox->addWidget(diskBtn);
     auto *backBtn = new QPushButton(tr("Back"));
+    backBtn->setFixedSize(254, 49);
     vbox->addWidget(backBtn);
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     setLayout(vbox);

@@ -19,14 +19,23 @@
 #include "filetopartwidget.h"
 
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QPushButton>
 
 FileToPartWidget::FileToPartWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
     auto *vbox = new QVBoxLayout;
-    auto *label = new QLabel(__PRETTY_FUNCTION__);
-    vbox->addWidget(label);
+    auto *hbox = new QHBoxLayout;
+    vbox->addLayout(hbox);
+    auto *label = new QLabel(tr("Partition Image file save path:"));
+    hbox->addWidget(label);
+    hbox = new QHBoxLayout;
+    vbox->addLayout(hbox);
+    auto *backBtn = new QPushButton(tr("Back"));
+    connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
+    hbox->addWidget(backBtn);
     setLayout(vbox);
 }
 

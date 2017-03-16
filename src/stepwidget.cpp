@@ -44,6 +44,9 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
                                   QDBusConnection::systemBus(),
                                   this);
 
+    m_UDisksClient = new UDisksClient;
+    m_UDisksClient->init();
+
     setWindowTitle(tr("iSOFT Partition or Disk clone and restore Assistant"));
     setWindowIcon(QIcon::fromTheme("drive-harddisk"));
     setFixedSize(625, 400);
@@ -63,16 +66,17 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     auto *diskClone = new DiskcloneWidget;
     connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
     connect(diskClone, &DiskcloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
-    auto *partToFile = new PartToFileWidget(m_OSProber);
+    auto *partToFile = new PartToFileWidget(m_OSProber, m_UDisksClient);
     connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
     auto *partToPart = new PartToPartWidget;
     connect(partToPart, &PartToPartWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
-    auto *diskToFile = new DiskToFileWidget(m_OSProber);
+    auto *diskToFile = new DiskToFileWidget(m_OSProber, m_UDisksClient);
     connect(diskToFile, &DiskToFileWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
     auto *diskToDisk = new DiskToDiskWidget;
     connect(diskToDisk, &DiskToDiskWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
     auto *restore = new RestoreWidget;
     connect(restore, &RestoreWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
+    connect(restore, &RestoreWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
     auto *fileToPart = new FileToPartWidget;
     connect(fileToPart, &FileToPartWidget::back, [=]() { stack->setCurrentIndex(RESTORE); });
     auto *fileToDisk = new FileToDiskWidget;
@@ -98,6 +102,11 @@ StepWidget::~StepWidget()
     if (m_OSProber) {
         delete m_OSProber;
         m_OSProber = Q_NULLPTR;
+    }
+
+    if (m_UDisksClient) {
+        delete m_UDisksClient;
+        m_UDisksClient = Q_NULLPTR;
     }
 }
 

@@ -39,7 +39,8 @@ class PartToFileWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit PartToFileWidget(OSProberType *OSProber, 
+    explicit PartToFileWidget(OSProberType *OSProber,
+                              UDisksClient *oUDisksClient, 
                               QWidget *parent = Q_NULLPTR, 
                               Qt::WindowFlags f = Qt::Tool);
     virtual ~PartToFileWidget();

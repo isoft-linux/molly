@@ -39,11 +39,13 @@ static pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void *callBack(void *percent, void *remaining);
 
-PartToFileWidget::PartToFileWidget(OSProberType *OSProber, 
+PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
+                                   UDisksClient *oUDisksClient, 
                                    QWidget *parent, 
                                    Qt::WindowFlags f)
     : QWidget(parent, f), 
-      m_OSProber(OSProber)
+      m_OSProber(OSProber), 
+      m_UDisksClient(oUDisksClient)
 {
     connect(m_OSProber, &OSProberType::Found, 
         [this](const QString &part, const QString &name, const QString &shortname) {
@@ -54,8 +56,6 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     // but do not let it go any more!
     //m_OSProber->Probe();
 
-    m_UDisksClient = new UDisksClient;
-    m_UDisksClient->init(); // Don't forget this!
     connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
     });
@@ -204,11 +204,6 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
 
 PartToFileWidget::~PartToFileWidget()
 {
-    if (m_UDisksClient) {
-        delete m_UDisksClient;
-        m_UDisksClient = Q_NULLPTR;
-    }
-
     if (m_combo) {
         delete m_combo;
         m_combo = Q_NULLPTR;

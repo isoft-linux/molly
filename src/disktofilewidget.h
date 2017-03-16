@@ -39,6 +39,7 @@ class DiskToFileWidget : public QWidget
 
 public:
     explicit DiskToFileWidget(OSProberType *OSProber,
+                              UDisksClient *oUDisksClient,
                               QWidget *parent = Q_NULLPTR, 
                               Qt::WindowFlags f = Qt::Tool);
     virtual ~DiskToFileWidget();
@@ -51,8 +52,7 @@ friend class ImgDialog;
 private:
     void getDriveObjects();
     void comboTextChanged(QString text);
-    bool isDiskAbleToShow(bool setFlag,
-                                 QTableWidgetItem *item);
+    bool isDiskAbleToShow(bool setFlag, QTableWidgetItem *item);
 
     QTableWidget *m_table = Q_NULLPTR;
     QPushButton *m_browseBtn = Q_NULLPTR;

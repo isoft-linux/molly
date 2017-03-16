@@ -72,6 +72,7 @@ static void format_size(uint64_t size, char *result)
 
 
 DiskToFileWidget::DiskToFileWidget(OSProberType *OSProber,
+                                   UDisksClient *oUDisksClient,
                                    QWidget *parent,
                                    Qt::WindowFlags f)
     : QWidget(parent, f),
@@ -84,8 +85,7 @@ DiskToFileWidget::DiskToFileWidget(OSProberType *OSProber,
     connect(m_OSProber, &OSProberType::Finished, [=]() { getDriveObjects(); });
     //m_OSProber->Probe();
 
-    m_UDisksClient = new UDisksClient;
-    m_UDisksClient->init(); // Don't forget this!
+    m_UDisksClient = oUDisksClient;
     connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
     });
@@ -180,11 +180,6 @@ DiskToFileWidget::DiskToFileWidget(OSProberType *OSProber,
 
 DiskToFileWidget::~DiskToFileWidget()
 {
-    if (m_UDisksClient) {
-        delete m_UDisksClient;
-        m_UDisksClient = Q_NULLPTR;
-    }
-
     if (m_browseBtn) {
         delete m_browseBtn;
         m_browseBtn = Q_NULLPTR;

@@ -21,6 +21,8 @@
 
 #include <QWidget>
 
+#include <UDisks2Qt5/UDisksClient>
+
 #include "osprober.h"
 
 // TODO: add your own widget (add to stack) order here
@@ -55,6 +57,7 @@ public:
 
 private:
     OSProberType *m_OSProber = Q_NULLPTR;
+    UDisksClient *m_UDisksClient = Q_NULLPTR;
 };
 
 #endif // STEP_WIDGET_H

@@ -21,6 +21,8 @@
 
 #include <QWidget>
 
+#include "stepwidget.h"
+
 class RestoreWidget : public QWidget
 {
     Q_OBJECT
@@ -30,7 +32,7 @@ public:
     virtual ~RestoreWidget();
 
 Q_SIGNALS:
-    void next();
+    void next(StepType type);
     void back();
 };
 
