@@ -22,7 +22,12 @@
 #include "partclonewidget.h"
 #include "diskclonewidget.h"
 #include "parttofilewidget.h"
+#include "parttopartwidget.h"
 #include "disktofilewidget.h"
+#include "disktodiskwidget.h"
+#include "restorewidget.h"
+#include "filetopartwidget.h"
+#include "filetodiskwidget.h"
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -60,19 +65,31 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     connect(diskClone, &DiskcloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
     auto *partToFile = new PartToFileWidget(m_OSProber);
     connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
+    auto *partToPart = new PartToPartWidget;
+    connect(partToPart, &PartToPartWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
     auto *diskToFile = new DiskToFileWidget(m_OSProber);
     connect(diskToFile, &DiskToFileWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
+    auto *diskToDisk = new DiskToDiskWidget;
+    connect(diskToDisk, &DiskToDiskWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
+    auto *restore = new RestoreWidget;
+    connect(restore, &RestoreWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
+    auto *fileToPart = new FileToPartWidget;
+    connect(fileToPart, &FileToPartWidget::back, [=]() { stack->setCurrentIndex(RESTORE); });
+    auto *fileToDisk = new FileToDiskWidget;
+    connect(fileToDisk, &FileToDiskWidget::back, [=]() { stack->setCurrentIndex(RESTORE); });
 
     // TODO: add your own widget here
     stack->addWidget(wizard);       // 0
     stack->addWidget(partClone);    // 1
     stack->addWidget(diskClone);    // 2
     stack->addWidget(partToFile);   // 3
-#ifdef DEBUG
-    auto *test = new QWidget;stack->addWidget(test);
-#endif
+    stack->addWidget(partToPart);   // 4
     stack->addWidget(diskToFile);   // 5
-    // for example, stack->addWidget(diskToFile);
+    stack->addWidget(diskToDisk);   // 6
+    stack->addWidget(restore);      // 7
+    stack->addWidget(fileToPart);   // 8
+    stack->addWidget(fileToDisk);   // 9
+    // for example, stack->addWidget(ditto);
     hbox->addWidget(stack);
 }
 

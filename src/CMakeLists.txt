@@ -12,10 +12,13 @@ set(molly_PART_SRCS
     partclonewidget.cpp
     parttofilewidget.cpp
     imgdialog.cpp
+    parttopartwidget.cpp
     diskclonewidget.cpp
-    partrestorewidget.cpp
-    diskrestorewidget.cpp
     disktofilewidget.cpp
+    disktodiskwidget.cpp
+    restorewidget.cpp
+    filetopartwidget.cpp
+    filetodiskwidget.cpp
     ${molly_RC_SRCS}
 )
 

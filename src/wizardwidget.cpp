@@ -61,12 +61,9 @@ WizardWidget::WizardWidget(QWidget *parent, Qt::WindowFlags f)
     cloneBtn->setFixedSize(115, 40);
     cloneBtn->setMenu(cloneMenu);
     hbox->addWidget(cloneBtn);
-    auto *restoreMenu = new QMenu;
-    restoreMenu->addAction(tr("Partition Image Restore"));
-    restoreMenu->addAction(tr("Disk Image Restore"));
     auto *restoreBtn = new QPushButton(tr("Restore"));
+    connect(restoreBtn, &QPushButton::clicked, [=]() { Q_EMIT next(RESTORE); });
     restoreBtn->setFixedSize(115, 40);
-    restoreBtn->setMenu(restoreMenu);
     hbox->addWidget(restoreBtn);
     spacer = new QSpacerItem(130, -1);
     hbox->addSpacerItem(spacer);

@@ -16,45 +16,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STEP_WIDGET_H
-#define STEP_WIDGET_H
+#ifndef FILETODISK_WIDGET_H
+#define FILETODISK_WIDGET_H
 
 #include <QWidget>
 
-#include "osprober.h"
-
-// TODO: add your own widget (add to stack) order here
-typedef enum {
-    WIZARD = 0,
-    PARTCLONE,
-    DISKCLONE,
-    PARTTOFILE,
-    PARTTOPART,
-    DISKTOFILE,
-    DISKTODISK,
-    RESTORE,
-    FILETOPART,
-    FILETODISK,
-} StepType;
-
-using OSProberType = org::isoftlinux::OSProber;
-
-const QString udisksDBusPathPrefix = "/org/freedesktop/UDisks2/block_devices/";
-const QString partImgExt = ".part";
-
-class StepWidget : public QWidget
+class FileToDiskWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit StepWidget(int argc, 
-                        char **argv, 
-                        QWidget *parent = Q_NULLPTR, 
-                        Qt::WindowFlags f = Qt::CustomizeWindowHint | Qt::WindowCloseButtonHint);
-    virtual ~StepWidget();
+    explicit FileToDiskWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    virtual ~FileToDiskWidget();
 
-private:
-    OSProberType *m_OSProber = Q_NULLPTR;
+Q_SIGNALS:
+    void next();
+    void back();
 };
 
-#endif // STEP_WIDGET_H
+#endif // FILETODISK_WIDGET_H

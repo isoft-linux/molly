@@ -16,19 +16,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include "diskrestorewidget.h"
+#include "parttopartwidget.h"
 
 #include <QVBoxLayout>
+#include <QLabel>
+#include <QPushButton>
 
-DiskrestoreWidget::DiskrestoreWidget(QWidget *parent, Qt::WindowFlags f)
+PartToPartWidget::PartToPartWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
-    QVBoxLayout *vbox = new QVBoxLayout;
+    auto *vbox = new QVBoxLayout;
+    auto *label = new QLabel(__PRETTY_FUNCTION__);
+    vbox->addWidget(label);
+    auto *backBtn = new QPushButton(tr("Back"));
+    vbox->addWidget(backBtn);
+    connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     setLayout(vbox);
 }
 
-DiskrestoreWidget::~DiskrestoreWidget()
+PartToPartWidget::~PartToPartWidget()
 {
 }
 
-#include "moc_diskrestorewidget.cpp"
+#include "moc_parttopartwidget.cpp"

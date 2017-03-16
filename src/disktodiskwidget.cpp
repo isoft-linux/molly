@@ -16,19 +16,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include "partrestorewidget.h"
+#include "disktodiskwidget.h"
 
 #include <QVBoxLayout>
 
-PartrestoreWidget::PartrestoreWidget(QWidget *parent, Qt::WindowFlags f)
+DiskToDiskWidget::DiskToDiskWidget(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f)
 {
     QVBoxLayout *vbox = new QVBoxLayout;
     setLayout(vbox);
 }
 
-PartrestoreWidget::~PartrestoreWidget()
+DiskToDiskWidget::~DiskToDiskWidget()
 {
 }
 
-#include "moc_partrestorewidget.cpp"
+#include "moc_disktodiskwidget.cpp"

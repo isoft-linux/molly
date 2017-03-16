@@ -16,21 +16,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PARTRESTORE_WIDGET_H
-#define PARTRESTORE_WIDGET_H
+#ifndef RESTORE_WIDGET_H
+#define RESTORE_WIDGET_H
 
 #include <QWidget>
 
-class PartrestoreWidget : public QWidget
+class RestoreWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit PartrestoreWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
-    virtual ~PartrestoreWidget();
+    explicit RestoreWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    virtual ~RestoreWidget();
 
 Q_SIGNALS:
     void next();
+    void back();
 };
 
-#endif // PARTRESTORE_WIDGET_H
+#endif // RESTORE_WIDGET_H

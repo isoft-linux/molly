@@ -16,21 +16,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DISKRESTORE_WIDGET_H
-#define DISKRESTORE_WIDGET_H
+#include "filetopartwidget.h"
 
-#include <QWidget>
+#include <QVBoxLayout>
+#include <QLabel>
 
-class DiskrestoreWidget : public QWidget
+FileToPartWidget::FileToPartWidget(QWidget *parent, Qt::WindowFlags f)
+    : QWidget(parent, f)
 {
-    Q_OBJECT
+    auto *vbox = new QVBoxLayout;
+    auto *label = new QLabel(__PRETTY_FUNCTION__);
+    vbox->addWidget(label);
+    setLayout(vbox);
+}
 
-public:
-    explicit DiskrestoreWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
-    virtual ~DiskrestoreWidget();
+FileToPartWidget::~FileToPartWidget()
+{
+}
 
-Q_SIGNALS:
-    void next();
-};
-
-#endif // DISKRESTORE_WIDGET_H
+#include "moc_filetopartwidget.cpp"
