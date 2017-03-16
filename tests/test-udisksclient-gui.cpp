@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Leslie Zhai <xiang.zhai@i-soft.com.cn>
+ * Copyright (C) 2017 fj <fujiang.zhu@i-soft.com.cn>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +39,7 @@ typedef struct {
     int  overwite;
     void *callback ;
 }test_t;
-static void *callback(void *arg)
+static void *callback(void *arg, void *r)
 {
     float *ret = (float *)arg;
     //printf("callback[%0.2f]\n", (float)*ret);
@@ -288,6 +289,7 @@ void *thread_test(void *arg)
           p->dst,
           p->overwite,
           callback,
+          NULL,
           NULL);
 
     g_beginDoClone = false;

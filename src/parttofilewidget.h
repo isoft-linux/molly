@@ -24,6 +24,7 @@
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QPushButton>
+#include <QLineEdit>
 
 #include <UDisks2Qt5/UDisksClient>
 #include <UDisks2Qt5/UDisksPartition>
@@ -46,6 +47,8 @@ public:
 Q_SIGNALS:
     void back();
     void next();
+    void error(QString message);
+    void finished();
 
 private:
     void getDriveObjects();
@@ -54,14 +57,19 @@ private:
                           UDisksBlock *blk,
                           UDisksFilesystem *fsys, 
                           QTableWidgetItem *item);
+    static void *startRoutine(void *arg);
+    static void *errorRoutine(void *arg, void *msg);
 
+    UDisksClient *m_UDisksClient = Q_NULLPTR;
     QComboBox *m_combo = Q_NULLPTR;
     QTableWidget *m_table = Q_NULLPTR;
+    QLineEdit *m_edit = Q_NULLPTR;
     QPushButton *m_browseBtn = Q_NULLPTR;
     QPushButton *m_cloneBtn = Q_NULLPTR;
     OSProberType *m_OSProber = Q_NULLPTR;
     QMap<QString, QString> m_OSMap;
     bool m_isClone = true;
+    bool m_isError = false;
 };
 
 #endif // PARTTOFILE_WIDGET_H
