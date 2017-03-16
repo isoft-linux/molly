@@ -41,7 +41,7 @@ static QString m_part = "";
 static QString m_img = "";
 
 static void *startRoutine(void *arg);
-static void *callBack(void *arg);
+static void *callBack(void *arg, void *remaining);
 
 #define DIM(x) (sizeof(x)/sizeof(*(x)))
 
@@ -295,7 +295,7 @@ bool DiskToFileWidget::isDiskAbleToShow(bool setFlag,
     return false;
 }
 
-static void *callBack(void *arg)
+static void *callBack(void *arg, void *remaining)
 {
     pthread_mutex_trylock(&m_mutex);
     float *percent = (float *)arg;
@@ -407,6 +407,7 @@ static void *startRoutine(void *arg)
                   (char *)qPrintable(dst),
                   1,
                   callBack,
+                  Q_NULLPTR,
                   Q_NULLPTR);
         } else {
             // todo:use dd for other types.
