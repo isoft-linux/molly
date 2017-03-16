@@ -131,6 +131,7 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     auto *backBtn = new QPushButton(tr("Back"));
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     connect(m_cloneBtn, &QPushButton::clicked, [=]() {
+        m_isError = false;
 #ifdef DEBUG
         qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_isClone;
 #endif
@@ -152,12 +153,8 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
                 items[4]->setText(tr("Cancel"));
             }
             m_progress->setVisible(false);
-            m_cloneBtn->setText(tr("Clone"));
-            m_combo->setEnabled(true);
-            m_table->setEnabled(true);
-            m_browseBtn->setEnabled(true);
-            m_edit->setEnabled(true);
-            backBtn->setEnabled(true);
+            m_cloneBtn->setText(tr("Canceling..."));
+            m_cloneBtn->setEnabled(false);
             partCloneCancel(1);
         }
         m_isClone = !m_isClone;
@@ -167,14 +164,36 @@ PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
     vbox->addLayout(hbox);
     setLayout(vbox);
 
-    connect(this, &PartToFileWidget::finished, [=]() {
+    connect(this, &PartToFileWidget::error, [=](QString message) {
+        m_isError = true;
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_isError << message;
+#endif
         m_isClone = true;
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size() > 4) {
+            items[4]->setText(tr("Error"));
+        }
+        m_progress->setVisible(false);
+        m_cloneBtn->setText(tr("Clone"));
+        m_combo->setEnabled(true);
+        m_table->setEnabled(true);
+        m_browseBtn->setEnabled(true);
+        m_edit->setEnabled(true);
+        backBtn->setEnabled(true);
+    });
+    connect(this, &PartToFileWidget::finished, [=]() {
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__;
+#endif
+        m_isClone = true;
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        if (!m_isError && items.size() > 4) {
             items[4]->setText(tr("Finished"));
         }
         m_progress->setVisible(false);
         m_cloneBtn->setText(tr("Clone"));
+        m_cloneBtn->setEnabled(true);
         m_combo->setEnabled(true);
         m_table->setEnabled(true);
         m_browseBtn->setEnabled(true);
@@ -323,6 +342,18 @@ static void *callBack(void *percent, void *remaining)
     return Q_NULLPTR;
 }
 
+void *PartToFileWidget::errorRoutine(void *arg, void *msg) 
+{
+    PartToFileWidget *thisPtr = (PartToFileWidget *)arg;
+    if (!thisPtr)
+        return Q_NULLPTR;
+
+    char *str = (char *)msg;
+    Q_EMIT thisPtr->error(str ? QString(str) : "");
+
+    return Q_NULLPTR;
+}
+
 void *PartToFileWidget::startRoutine(void *arg) 
 {
     PartToFileWidget *thisPtr = (PartToFileWidget *)arg;
@@ -355,8 +386,9 @@ void *PartToFileWidget::startRoutine(void *arg)
               part.toStdString().c_str(), 
               img.toStdString().c_str(),
               1,
-              callBack, 
-              Q_NULLPTR);
+              callBack,
+              errorRoutine,
+              thisPtr);
     Q_EMIT thisPtr->finished();
 }
 

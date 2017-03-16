@@ -47,6 +47,7 @@ public:
 Q_SIGNALS:
     void back();
     void next();
+    void error(QString message);
     void finished();
 
 private:
@@ -57,6 +58,7 @@ private:
                           UDisksFilesystem *fsys, 
                           QTableWidgetItem *item);
     static void *startRoutine(void *arg);
+    static void *errorRoutine(void *arg, void *msg);
 
     UDisksClient *m_UDisksClient = Q_NULLPTR;
     QComboBox *m_combo = Q_NULLPTR;
@@ -67,6 +69,7 @@ private:
     OSProberType *m_OSProber = Q_NULLPTR;
     QMap<QString, QString> m_OSMap;
     bool m_isClone = true;
+    bool m_isError = false;
 };
 
 #endif // PARTTOFILE_WIDGET_H
