@@ -1,6 +1,7 @@
 # molly
 
 Open source alternative for [Ghost](https://en.wikipedia.org/wiki/Ghost_(software)).
+
 [partclone](https://github.com/Thomas-Tsai/partclone) and [dd](https://en.wikipedia.org/wiki/Dd_(Unix))'s [Qt](https://www.qt.io/) frontend.
 
 ## Dependence
