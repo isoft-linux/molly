@@ -80,6 +80,7 @@ FileToPartWidget::FileToPartWidget(UDisksClient *oUDisksClient,
 #ifdef DEBUG
             qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << imgPath;
 #endif
+            Q_EMIT next(imgPath);
         }
     });
     connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {

@@ -16,8 +16,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FILETOPART_WIDGET_H
-#define FILETOPART_WIDGET_H
+#ifndef PARTRESTORE_WIDGET_H
+#define PARTRESTORE_WIDGET_H
 
 #include <QWidget>
 #include <QComboBox>
@@ -27,27 +27,40 @@
 
 #include "stepwidget.h"
 
-class FileToPartWidget : public QWidget
+class PartRestoreWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit FileToPartWidget(UDisksClient *oUDisksClient, 
-                              QWidget *parent = Q_NULLPTR, 
-                              Qt::WindowFlags f = Qt::Tool);
-    virtual ~FileToPartWidget();
+    explicit PartRestoreWidget(UDisksClient *oUDisksClient, 
+                               QWidget *parent = Q_NULLPTR, 
+                               Qt::WindowFlags f = Qt::Tool);
+    virtual ~PartRestoreWidget();
+    void setImgPath(const QString imgPath);
+    void setOSMap(OSMapType OSMap);
 
 Q_SIGNALS:
-    void next(QString imgPath);
     void back();
+    void error(QString message);
+    void finished();
 
 private:
     void getDriveObjects();
     void comboTextChanged(QString text);
+    bool isPartAbleToShow(const UDisksPartition *part, 
+                          UDisksBlock *blk,
+                          UDisksFilesystem *fsys, 
+                          QTableWidgetItem *item);
+    static void *startRoutine(void *arg);
+    static void *errorRoutine(void *arg, void *msg);
 
+    QString m_imgPath = "";
+    QString m_imgType = "";
+    unsigned long long m_imgUsed = 0;
+    OSMapType m_OSMap;
     UDisksClient *m_UDisksClient = Q_NULLPTR;
     QComboBox *m_combo = Q_NULLPTR;
     QTableWidget *m_table = Q_NULLPTR;
 };
 
-#endif // FILETOPART_WIDGET_H
+#endif // PARTRESTORE_WIDGET_H

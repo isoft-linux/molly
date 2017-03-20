@@ -18,6 +18,14 @@
  */
 
 #include "stepwidget.h"
+
+#include <QApplication>
+#include <QDesktopWidget>
+#include <QIcon>
+#include <QHBoxLayout>
+#include <QStackedWidget>
+#include <QDebug>
+
 #include "wizardwidget.h"
 #include "partclonewidget.h"
 #include "diskclonewidget.h"
@@ -27,14 +35,8 @@
 #include "disktodiskwidget.h"
 #include "restorewidget.h"
 #include "filetopartwidget.h"
+#include "partrestorewidget.h"
 #include "filetodiskwidget.h"
-
-#include <QApplication>
-#include <QDesktopWidget>
-#include <QIcon>
-#include <QHBoxLayout>
-#include <QStackedWidget>
-#include <QDebug>
 
 StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f) 
     : QWidget(parent, f) 
@@ -42,7 +44,11 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     m_UDisksClient = new UDisksClient;
     m_UDisksClient->init();
 
+    auto *stack = new QStackedWidget;
     auto *partToFile = new PartToFileWidget(m_UDisksClient);
+    connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
+    auto *partRestore = new PartRestoreWidget(m_UDisksClient);
+    connect(partRestore, &PartRestoreWidget::back, [=]() { stack->setCurrentIndex(FILETOPART); });
 
     m_OSProber = new OSProberType("org.isoftlinux.OSProber",
                                   "/org/isoftlinux/OSProber",
@@ -57,6 +63,7 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
         qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_OSMap;
 #endif
         partToFile->setOSMap(m_OSMap);
+        partRestore->setOSMap(m_OSMap);
     });
     m_OSProber->Probe();
 
@@ -70,7 +77,6 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     hbox->setContentsMargins(0, 0, 0, 0);
     setLayout(hbox);
     
-    auto *stack = new QStackedWidget;
     auto *wizard = new WizardWidget;
     connect(wizard, &WizardWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
     auto *partClone = new PartCloneWidget;
@@ -80,7 +86,6 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
     connect(diskClone, &DiskcloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
 
-    connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
     auto *partToPart = new PartToPartWidget;
     connect(partToPart, &PartToPartWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
     auto *diskToFile = new DiskToFileWidget(m_OSMap, m_UDisksClient);
@@ -92,6 +97,10 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     connect(restore, &RestoreWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
     auto *fileToPart = new FileToPartWidget(m_UDisksClient);
     connect(fileToPart, &FileToPartWidget::back, [=]() { stack->setCurrentIndex(RESTORE); });
+    connect(fileToPart, &FileToPartWidget::next, [=](QString imgPath) {
+        partRestore->setImgPath(imgPath);
+        stack->setCurrentIndex(PARTRESTORE);
+    });
     auto *fileToDisk = new FileToDiskWidget;
     connect(fileToDisk, &FileToDiskWidget::back, [=]() { stack->setCurrentIndex(RESTORE); });
 
@@ -99,19 +108,22 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     stack->addWidget(wizard);           // 0
     stack->addWidget(partClone);        // 1
     stack->addWidget(diskClone);        // 2
-    stack->addWidget(partToFile);     // 3
+    stack->addWidget(partToFile);       // 3
     stack->addWidget(partToPart);       // 4
     stack->addWidget(diskToFile);       // 5
     stack->addWidget(diskToDisk);       // 6
     stack->addWidget(restore);          // 7
     stack->addWidget(fileToPart);       // 8
-    stack->addWidget(fileToDisk);       // 9
+    stack->addWidget(partRestore);      // 9
+    stack->addWidget(fileToDisk);       // 10
     // for example, stack->addWidget(ditto);
     hbox->addWidget(stack);
 }
 
 StepWidget::~StepWidget()
 {
+    m_OSMap.clear();
+
     if (m_OSProber) {
         delete m_OSProber;
         m_OSProber = Q_NULLPTR;
