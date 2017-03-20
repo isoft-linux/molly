@@ -33,17 +33,16 @@
 
 #include "stepwidget.h"
 
-class PartToFileThread;
 class PartToFileWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit PartToFileWidget(OSProberType *OSProber,
-                              UDisksClient *oUDisksClient, 
+    explicit PartToFileWidget(UDisksClient *oUDisksClient, 
                               QWidget *parent = Q_NULLPTR, 
                               Qt::WindowFlags f = Qt::Tool);
     virtual ~PartToFileWidget();
+    void setOSMap(OSMapType OSMap);
 
 Q_SIGNALS:
     void back();
@@ -67,8 +66,7 @@ private:
     QLineEdit *m_edit = Q_NULLPTR;
     QPushButton *m_browseBtn = Q_NULLPTR;
     QPushButton *m_cloneBtn = Q_NULLPTR;
-    OSProberType *m_OSProber = Q_NULLPTR;
-    QMap<QString, QString> m_OSMap;
+    OSMapType m_OSMap;
     bool m_isClone = true;
     bool m_isError = false;
 };
