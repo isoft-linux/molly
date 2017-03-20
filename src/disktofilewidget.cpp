@@ -21,6 +21,7 @@
 
 #include "disktofilewidget.h"
 #include "imgdialog.h"
+#include "utils.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -33,43 +34,13 @@
 
 #define  PART_CLONE_EXT_NAME ".part"
 
-static UDisksClient *m_UDisksClient = Q_NULLPTR;
-static QProgressBar *m_progress = Q_NULLPTR;
+static UDisksClient *m_UDisksClientd2f = Q_NULLPTR;
+static QProgressBar *m_progressd2f = Q_NULLPTR;
 static pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t m_thread;
 static QString m_part = "";
 static QString m_img = "";
-
-static void *startRoutine(void *arg);
-static void *callBack(void *arg, void *remaining);
-
-#define DIM(x) (sizeof(x)/sizeof(*(x)))
-
-static const char     *sizes[]   = { "EB", "PB", "TB", "GB", "MB", "KB", "B" };
-static const uint64_t  exbibytes = 1024ULL * 1024ULL * 1024ULL *
-        1024ULL * 1024ULL * 1024ULL;
-
-static void format_size(uint64_t size, char *result)
-{
-    uint64_t multiplier;
-    int i;
-
-    multiplier = exbibytes;
-
-    for (i = 0 ; i < DIM(sizes) ; i++, multiplier /= 1024) {
-        if (size < multiplier)
-            continue;
-        if (size % multiplier == 0)
-            sprintf(result, "%u %s", size / multiplier, sizes[i]);
-        else
-            sprintf(result, "%.1f %s", (float) size / multiplier, sizes[i]);
-        return;
-    }
-
-    strcpy(result, "0");
-    return;
-}
-
+static int g_progressValue = 0;
 
 DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
                                    UDisksClient *oUDisksClient,
@@ -78,17 +49,19 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
     : QWidget(parent, f),
       m_OSMap(OSMap)
 {
-    m_UDisksClient = oUDisksClient;
-    connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
+    m_UDisksClientd2f = oUDisksClient;
+    connect(m_UDisksClientd2f, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
     });
-    connect(m_UDisksClient, &UDisksClient::objectRemoved, [=](const UDisksObject::Ptr &object) {
+    connect(m_UDisksClientd2f, &UDisksClient::objectRemoved, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
     });
-    connect(m_UDisksClient, &UDisksClient::objectsAvailable, [=]() {
+    connect(m_UDisksClientd2f, &UDisksClient::objectsAvailable, [=]() {
         getDriveObjects();
     });
 
+    m_timer = new QTimer();
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(advanceProgressBar()));
     auto *vbox = new QVBoxLayout;
     auto *hbox = new QHBoxLayout;
     auto *label = new QLabel(tr("Please choose the Disk:"));
@@ -141,25 +114,30 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
     hbox->addWidget(m_browseBtn);
     vbox->addLayout(hbox);
     hbox = new QHBoxLayout;
-    m_progress = new QProgressBar;
-    vbox->addWidget(m_progress);
+    m_progressd2f = new QProgressBar;
+    vbox->addWidget(m_progressd2f);
 
-    m_progress->setVisible(false);
+    m_progressd2f->setVisible(false);
     connect(m_cloneBtn, &QPushButton::clicked, [=]() {
         if (m_isClone) {
             QList<QTableWidgetItem *> items = m_table->selectedItems();
             if (items.size() && ImgDialog::isPathWritable(edit->text())) {
-                m_progress->setVisible(true);
+                m_progressd2f->setVisible(true);
+                m_progressd2f->setValue(0);
                 m_cloneBtn->setText(tr("Cancel"));
                 m_part = items[1]->text(); // /dev/sda
                 m_img = edit->text(); // path[/home/test/]
+                m_timer->stop();
 
-                pthread_create(&m_thread, NULL, startRoutine, NULL);
+                pthread_create(&m_thread, NULL, startRoutined2f, this);
+
+                m_timer->start(500);
             }
         } else {
-            m_progress->setVisible(false);
+            m_progressd2f->setVisible(false);
             m_cloneBtn->setText(tr("Clone"));
             partCloneCancel(1);
+            m_timer->stop();
         }
         m_isClone = !m_isClone;
     });
@@ -169,6 +147,38 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
     hbox->addWidget(backBtn);
     vbox->addLayout(hbox);
     setLayout(vbox);
+
+    connect(this, &DiskToFileWidget::error, [=](QString message) {
+        m_isError = true;
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_isError << message;
+#endif
+        m_isClone = true;
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        if (items.size() > 4) {
+            items[5]->setText(tr("Error"));
+        }
+        m_progressd2f->setVisible(false);
+        m_cloneBtn->setText(tr("Clone"));
+        m_table->setEnabled(true);
+        m_browseBtn->setEnabled(true);
+        edit->setEnabled(true);
+        backBtn->setEnabled(true);
+    });
+    connect(this, &DiskToFileWidget::finished, [=]() {
+        m_isClone = true;
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        if (!m_isError && items.size() > 4) {
+            items[5]->setText(tr("Finished"));
+        }
+        m_progressd2f->setVisible(false);
+        m_cloneBtn->setText(tr("Clone"));
+        m_cloneBtn->setEnabled(true);
+        m_table->setEnabled(true);
+        m_browseBtn->setEnabled(true);
+        edit->setEnabled(true);
+        backBtn->setEnabled(true);
+    });
 }
 
 DiskToFileWidget::~DiskToFileWidget()
@@ -186,7 +196,7 @@ void DiskToFileWidget::getDriveObjects()
     m_browseBtn->setEnabled(false);
     m_table->setRowCount(0);
     m_table->clearContents();
-    for (const UDisksObject::Ptr drvPtr : m_UDisksClient->getObjects(UDisksObject::Drive)) {
+    for (const UDisksObject::Ptr drvPtr : m_UDisksClientd2f->getObjects(UDisksObject::Drive)) {
         UDisksDrive *drv = drvPtr->drive();
         if (!drv)
             continue;
@@ -200,7 +210,7 @@ void DiskToFileWidget::getDriveObjects()
 
         QDBusObjectPath tblPath = QDBusObjectPath(udisksDBusPathPrefix + sdx.mid(5));
         QList<UDisksPartition *> parts;
-        for (const UDisksObject::Ptr partPtr : m_UDisksClient->getPartitions(tblPath)) {
+        for (const UDisksObject::Ptr partPtr : m_UDisksClientd2f->getPartitions(tblPath)) {
             UDisksPartition *part = partPtr->partition();
             parts << part;
         }
@@ -215,7 +225,7 @@ void DiskToFileWidget::getDriveObjects()
             }
 
             UDisksObject::Ptr objPtr =
-                    m_UDisksClient->getObject(QDBusObjectPath(udisksDBusPathPrefix +
+                    m_UDisksClientd2f->getObject(QDBusObjectPath(udisksDBusPathPrefix +
                                                               sdx.mid(5) + QString::number(part->number())));
             if (!objPtr)
                 continue;
@@ -260,7 +270,7 @@ void DiskToFileWidget::getDriveObjects()
         isDiskAbleToShow(showFlag,item);
         m_table->setItem(row, 3, item);
 
-        item = new QTableWidgetItem(QString::number(123));
+        item = new QTableWidgetItem(QString::number(0));
         isDiskAbleToShow(showFlag,item);
         m_table->setItem(row, 4, item);
 
@@ -282,24 +292,49 @@ bool DiskToFileWidget::isDiskAbleToShow(bool setFlag,
     item->setFlags(Qt::NoItemFlags);
     return false;
 }
+void DiskToFileWidget::advanceProgressBar()
+{
+    if (m_progressd2f && g_progressValue > 0) {
+        char pos[64] = "";
+        char tsize[64] = "";
+        int value = monitor_processes("dd",pos,tsize);
+        m_progressd2f->setValue(value);
+        m_progressd2f->setFormat(QString::number(value) + "% " + QString(pos) + "/" + QString(tsize) );
+    }
+}
 
-static void *callBack(void *arg, void *remaining)
+static void *callBackd2f(void *percent, void *remaining)
 {
     pthread_mutex_trylock(&m_mutex);
-    float *percent = (float *)arg;
-    if (m_progress)
-        m_progress->setValue((int)*percent);
+    float *value = (float *)percent;
+    char *str = (char *)remaining;
+    if (m_progressd2f) {
+        m_progressd2f->setValue((int)*value);
+        m_progressd2f->setFormat(QString::number((int)*value) + "% " + QString(str));
+    }
     pthread_mutex_unlock(&m_mutex);
     return Q_NULLPTR;
 }
 
-static void *startRoutine(void *arg)
+void *DiskToFileWidget::errorRoutine(void *arg, void *msg)
+{
+    DiskToFileWidget *thisPtr = (DiskToFileWidget *)arg;
+    if (!thisPtr)
+        return Q_NULLPTR;
+
+    char *str = (char *)msg;
+    Q_EMIT thisPtr->error(str ? QString(str) : "");
+
+    return Q_NULLPTR;
+}
+
+void *DiskToFileWidget::startRoutined2f(void *arg)
 {
     if (m_part.isEmpty() || m_img.isEmpty())
         return Q_NULLPTR;
-    if (!m_UDisksClient)
+    if (!m_UDisksClientd2f)
         return Q_NULLPTR;
-
+    DiskToFileWidget *thisPtr = (DiskToFileWidget *)arg;
     QString srcDisk = m_part;
     QString dstPath = m_img;
     partType type = LIBPARTCLONE_UNKNOWN;
@@ -327,7 +362,7 @@ static void *startRoutine(void *arg)
     system(qPrintable(cmd));
 
     QMap<QString, QString> disksMap;
-    for (const UDisksObject::Ptr drvPtr : m_UDisksClient->getObjects(UDisksObject::Drive)) {
+    for (const UDisksObject::Ptr drvPtr : m_UDisksClientd2f->getObjects(UDisksObject::Drive)) {
         UDisksDrive *drv = drvPtr->drive();
         if (!drv)
             continue;
@@ -342,7 +377,7 @@ static void *startRoutine(void *arg)
         }
         QDBusObjectPath tblPath = QDBusObjectPath(udisksDBusPathPrefix + sdx.mid(5));
         QList<UDisksPartition *> parts;
-        for (const UDisksObject::Ptr partPtr : m_UDisksClient->getPartitions(tblPath)) {
+        for (const UDisksObject::Ptr partPtr : m_UDisksClientd2f->getPartitions(tblPath)) {
             UDisksPartition *part = partPtr->partition();
             parts << part;
         }
@@ -355,7 +390,7 @@ static void *startRoutine(void *arg)
                 continue;
             }
             UDisksObject::Ptr objPtr =
-                    m_UDisksClient->getObject(QDBusObjectPath(udisksDBusPathPrefix +
+                    m_UDisksClientd2f->getObject(QDBusObjectPath(udisksDBusPathPrefix +
                                                               sdx.mid(5) + QString::number(part->number())));
             if (!objPtr)
                 continue;
@@ -382,7 +417,7 @@ static void *startRoutine(void *arg)
             type = LIBPARTCLONE_EXTFS;
         else if (strType == "ntfs")
             type = LIBPARTCLONE_NTFS;
-
+        //if (it.key().mid(5) == "sdc1") type = LIBPARTCLONE_UNKNOWN;
         if (type != LIBPARTCLONE_UNKNOWN) {
             QString dst = dstPath + "/" + it.key().mid(5) + PART_CLONE_EXT_NAME;
 
@@ -394,16 +429,26 @@ static void *startRoutine(void *arg)
                   (char *)qPrintable(it.key()),
                   (char *)qPrintable(dst),
                   1,
-                  callBack,
-                  Q_NULLPTR,
-                  Q_NULLPTR);
+                  callBackd2f,
+                  errorRoutine,
+                  thisPtr);
         } else {
-            // todo:use dd for other types.
+            // meet [permission denied]!!!
+            QString dst = dstPath + "/" + it.key().mid(5) + PART_CLONE_EXT_NAME + ".dd";
+            cmd = "/usr/bin/dd if=" + it.key() + " of=" + dst + " bs=4096 ";
 
+            printf("%d,will use dd to clone[%s]to[%s],dd cmd[%s]\n",
+                   __LINE__,
+                   qPrintable(it.key()),qPrintable(dst),
+                   qPrintable(cmd));
+            g_progressValue = 1;
+            system(qPrintable(cmd));
+            g_progressValue = 0;
         }
-
     }
     disksMap.clear();
+
+    Q_EMIT thisPtr->finished();
 
     pthread_detach(pthread_self());
 }
