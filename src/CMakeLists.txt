@@ -19,6 +19,7 @@ set(molly_PART_SRCS
     restorewidget.cpp
     filetopartwidget.cpp
     filetodiskwidget.cpp
+    utils.cpp
     ${molly_RC_SRCS}
 )
 

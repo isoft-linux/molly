@@ -47,12 +47,16 @@ public:
 Q_SIGNALS:
     void back();
     void next(StepType type);
+    void error(QString message);
+    void finished();
 
-friend class ImgDialog;
+//friend class ImgDialog;
 private:
     void getDriveObjects();
     void comboTextChanged(QString text);
     bool isDiskAbleToShow(bool setFlag, QTableWidgetItem *item);
+    static void *startRoutined2f(void *arg);
+    static void *errorRoutine(void *arg, void *msg);
 
     QTableWidget *m_table = Q_NULLPTR;
     QPushButton *m_browseBtn = Q_NULLPTR;
@@ -61,6 +65,11 @@ private:
     QMap<QString, QString> m_OSMap;
     QProgressBar *m_progress;
     bool m_isClone = true;
+    bool m_isError = false;
+    QTimer *m_timer = Q_NULLPTR;
+
+private Q_SLOTS:
+    void advanceProgressBar();
 };
 
 #endif // DISKTOFILE_WIDGET_H
