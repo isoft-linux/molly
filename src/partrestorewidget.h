@@ -61,6 +61,7 @@ private:
     UDisksClient *m_UDisksClient = Q_NULLPTR;
     QComboBox *m_combo = Q_NULLPTR;
     QTableWidget *m_table = Q_NULLPTR;
+    bool m_isError = false;
 };
 
 #endif // PARTRESTORE_WIDGET_H

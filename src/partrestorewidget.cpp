@@ -69,9 +69,15 @@ PartRestoreWidget::PartRestoreWidget(UDisksClient *oUDisksClient,
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     auto *confirmBtn = new QPushButton(tr("Confirm"));
     confirmBtn->setEnabled(false);
+    auto *backBtn = new QPushButton(tr("Back"));
+    connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     connect(confirmBtn, &QPushButton::clicked, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (!m_imgPath.isEmpty() && items.size()) {
+            m_isError = false;
+            m_progress->setVisible(true);
+            confirmBtn->setEnabled(false);
+            backBtn->setEnabled(false);
             pthread_create(&m_thread, NULL, startRoutine, this);
         }
     });
@@ -89,18 +95,25 @@ PartRestoreWidget::PartRestoreWidget(UDisksClient *oUDisksClient,
     auto *hbox = new QHBoxLayout;
     vbox->addLayout(hbox);
     hbox->addWidget(confirmBtn);
-    auto *backBtn = new QPushButton(tr("Back"));
-    connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     hbox->addWidget(backBtn);
     setLayout(vbox);
 
     connect(this, &PartRestoreWidget::error, [=](QString message) {
+        m_isError = true;
         m_progress->setValue(0);
         m_progress->setVisible(false);
+        confirmBtn->setEnabled(true);
+        backBtn->setEnabled(true);
     });
     connect(this, &PartRestoreWidget::finished, [=]() {
         m_progress->setValue(0);
         m_progress->setVisible(false);
+        confirmBtn->setEnabled(true);
+        backBtn->setEnabled(true);
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        if (!m_isError && items.size() > 4) {
+            items[4]->setText(tr("Finished"));
+        }
     });
 }
 
