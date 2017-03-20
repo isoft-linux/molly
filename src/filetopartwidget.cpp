@@ -22,11 +22,17 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QHeaderView>
+#include <QDir>
+#include <QLineEdit>
+#include <QFileDialog>
 
 #include <UDisks2Qt5/UDisksDrive>
 #include <UDisks2Qt5/UDisksPartition>
 #include <UDisks2Qt5/UDisksBlock>
 #include <UDisks2Qt5/UDisksFilesystem>
+
+#include <libpartclone.h>
 
 FileToPartWidget::FileToPartWidget(UDisksClient *oUDisksClient, 
                                    QWidget *parent, 
@@ -52,8 +58,58 @@ FileToPartWidget::FileToPartWidget(UDisksClient *oUDisksClient,
     m_combo = new QComboBox;
     hbox->addWidget(m_combo);
     vbox->addLayout(hbox);
+    m_table = new QTableWidget;
+    QStringList headers {tr("Image"), tr("Type"), tr("Size")};
+    m_table->setColumnCount(headers.size());
+    m_table->setHorizontalHeaderLabels(headers);
+    m_table->verticalHeader()->setVisible(false);
+    m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_table->setSelectionMode(QAbstractItemView::SingleSelection);
+    auto *edit = new QLineEdit;
+    auto *nextBtn = new QPushButton(tr("Next"));
+    nextBtn->setEnabled(false);
+    connect(nextBtn, &QPushButton::clicked, [=]() {
+        QString imgPath = edit->text();
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        if (imgPath.isEmpty()) {
+            if (items.size())
+                imgPath = items[0]->text();
+        }
+        QFileInfo info(imgPath);
+        if (info.isReadable()) {
+#ifdef DEBUG
+            qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << imgPath;
+#endif
+        }
+    });
+    connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        if (items.size()) {
+            QFileInfo info(items[0]->text());
+            if (info.isReadable())
+                nextBtn->setEnabled(true);
+        }
+    });
+    vbox->addWidget(m_table);
     hbox = new QHBoxLayout;
     vbox->addLayout(hbox);
+    connect(edit, &QLineEdit::textChanged, [=](const QString &text) {
+        QFileInfo info(text);
+        if (info.isReadable())
+            nextBtn->setEnabled(true);
+    });
+    hbox->addWidget(edit);
+    auto *browseBtn = new QPushButton(tr("Browse"));
+    hbox->addWidget(browseBtn);
+    connect(browseBtn, &QPushButton::clicked, [=]() {
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Open Image File"), 
+                QStandardPaths::writableLocation(QStandardPaths::HomeLocation), 
+                tr("Image Files (*.part)"));
+        edit->setText(fileName);
+	});
+    hbox = new QHBoxLayout;
+    vbox->addLayout(hbox);
+    hbox->addWidget(nextBtn);
     auto *backBtn = new QPushButton(tr("Back"));
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     hbox->addWidget(backBtn);
@@ -62,12 +118,21 @@ FileToPartWidget::FileToPartWidget(UDisksClient *oUDisksClient,
 
 FileToPartWidget::~FileToPartWidget()
 {
+    if (m_combo) {
+        delete m_combo;
+        m_combo = Q_NULLPTR;
+    }
+
+    if (m_table) {
+        delete m_table;
+        m_table = Q_NULLPTR;
+    }
 }
 
 void FileToPartWidget::comboTextChanged(QString text) 
 {
-    //m_table->setRowCount(0);
-    //m_table->clearContents();
+    m_table->setRowCount(0);
+    m_table->clearContents();
 
     if (text.isEmpty())
         return;
@@ -91,29 +156,37 @@ void FileToPartWidget::comboTextChanged(QString text)
         if (!blk) 
             continue;
         UDisksFilesystem *fsys = objPtr->filesystem();
+        if (!fsys)
+            continue;
+
+        for (QString mount : fsys->mountPoints()) {
+            if (mount == "/var/lib/os-prober/mount")
+                continue;
+            QDir imgDir = QDir(mount, "*" + partImgExt, QDir::Name, QDir::Files | QDir::NoSymLinks | QDir::Readable);
+            if (mount == "/") {
+                QStringList locations = QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
+                if (locations.size())
+                    imgDir.setPath(locations[0]);
+            }
 #ifdef DEBUG
-        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << fsys;
+            qDebug() << "DEBUG:" << imgDir;
 #endif
+            for (QString name : imgDir.entryList()) {
+                QString imgPath = imgDir.path() + "/" + name;
+                partInfo_t info;
+                partInfo(imgPath.toStdString().c_str(), &info);
+                m_table->insertRow(row);
+                auto *item = new QTableWidgetItem(imgPath);
+                m_table->setItem(row, 0, item);
 
-        /*
-        m_table->insertRow(row);
-        QString partStr = text + QString::number(part->number());
-        auto *item = new QTableWidgetItem(partStr);
-        m_table->setItem(row, 0, item);
+                item = new QTableWidgetItem(QString(info.type));
+                m_table->setItem(row, 1, item);
 
-        item = new QTableWidgetItem(QString::number(part->size() / 1073741824.0, 'f', 1) + " G");
-        m_table->setItem(row, 1, item);
-
-        item = new QTableWidgetItem(blk->idType());
-        m_table->setItem(row, 2, item);
-
-        item = new QTableWidgetItem(m_OSMap[partStr]);
-        m_table->setItem(row, 3, item);
-
-        item = new QTableWidgetItem("");
-        m_table->setItem(row, 4, item);
-        */
-        row++;
+                item = new QTableWidgetItem(QString(info.devSize));
+                m_table->setItem(row, 2, item);
+                row++;
+            }
+        }
     }
 
     UDisksObject::Ptr blkPtr = m_UDisksClient->getObject(tblPath);

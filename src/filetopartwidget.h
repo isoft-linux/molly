@@ -21,6 +21,7 @@
 
 #include <QWidget>
 #include <QComboBox>
+#include <QTableWidget>
 
 #include <UDisks2Qt5/UDisksClient>
 
@@ -46,6 +47,7 @@ private:
 
     UDisksClient *m_UDisksClient = Q_NULLPTR;
     QComboBox *m_combo = Q_NULLPTR;
+    QTableWidget *m_table = Q_NULLPTR;
 };
 
 #endif // FILETOPART_WIDGET_H

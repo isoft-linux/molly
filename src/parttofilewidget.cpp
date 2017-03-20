@@ -24,7 +24,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QHeaderView>
-#include <QFileInfo>
 #include <QProgressBar>
 
 #include <UDisks2Qt5/UDisksObject>
