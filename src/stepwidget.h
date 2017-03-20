@@ -40,6 +40,7 @@ typedef enum {
 } StepType;
 
 using OSProberType = org::isoftlinux::OSProber;
+using OSMapType = QMap<QString, QString>;
 
 const QString udisksDBusPathPrefix = "/org/freedesktop/UDisks2/block_devices/";
 const QString partImgExt = ".part";
@@ -58,6 +59,7 @@ public:
 private:
     OSProberType *m_OSProber = Q_NULLPTR;
     UDisksClient *m_UDisksClient = Q_NULLPTR;
+    OSMapType m_OSMap;
 };
 
 #endif // STEP_WIDGET_H

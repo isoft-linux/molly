@@ -39,23 +39,12 @@ static pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void *callBack(void *percent, void *remaining);
 
-PartToFileWidget::PartToFileWidget(OSProberType *OSProber,
-                                   UDisksClient *oUDisksClient, 
+PartToFileWidget::PartToFileWidget(UDisksClient *oUDisksClient, 
                                    QWidget *parent, 
                                    Qt::WindowFlags f)
-    : QWidget(parent, f), 
-      m_OSProber(OSProber), 
-      m_UDisksClient(oUDisksClient)
+  : QWidget(parent, f),
+    m_UDisksClient(oUDisksClient)
 {
-    connect(m_OSProber, &OSProberType::Found, 
-        [this](const QString &part, const QString &name, const QString &shortname) {
-        m_OSMap[part] = name;
-    });
-    connect(m_OSProber, &OSProberType::Finished, [=]() { getDriveObjects(); });
-    // FIXME: os-prober might mount the partition to /var/lib/os-prober/mount 
-    // but do not let it go any more!
-    //m_OSProber->Probe();
-
     connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
     });
@@ -215,6 +204,15 @@ PartToFileWidget::~PartToFileWidget()
     }
 }
 
+void PartToFileWidget::setOSMap(OSMapType OSMap) 
+{ 
+    m_OSMap = OSMap; 
+#ifdef DEBUG
+    qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_OSMap;
+#endif
+    comboTextChanged(m_combo->currentText());
+}
+
 bool PartToFileWidget::isPartAbleToShow(const UDisksPartition *part, 
                                         UDisksBlock *blk,
                                         UDisksFilesystem *fsys, 
@@ -280,6 +278,9 @@ void PartToFileWidget::comboTextChanged(QString text)
         isPartAbleToShow(part, blk, fsys, item);
         m_table->setItem(row, 2, item);
 
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_OSMap << partStr;
+#endif
         item = new QTableWidgetItem(m_OSMap[partStr]);
         isPartAbleToShow(part, blk, fsys, item);
         m_table->setItem(row, 3, item);

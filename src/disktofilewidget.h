@@ -38,7 +38,7 @@ class DiskToFileWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit DiskToFileWidget(OSProberType *OSProber,
+    explicit DiskToFileWidget(OSMapType OSMap,
                               UDisksClient *oUDisksClient,
                               QWidget *parent = Q_NULLPTR, 
                               Qt::WindowFlags f = Qt::Tool);
@@ -57,8 +57,7 @@ private:
     QTableWidget *m_table = Q_NULLPTR;
     QPushButton *m_browseBtn = Q_NULLPTR;
     QPushButton *m_cloneBtn = Q_NULLPTR;
-    OSProberType *m_OSProber = Q_NULLPTR;
-    QMap<QString, QString> m_OSMap;
+    OSMapType m_OSMap;
     QProgressBar *m_progress;
     bool m_isClone = true;
 };

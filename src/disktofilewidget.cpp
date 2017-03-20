@@ -71,20 +71,13 @@ static void format_size(uint64_t size, char *result)
 }
 
 
-DiskToFileWidget::DiskToFileWidget(OSProberType *OSProber,
+DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
                                    UDisksClient *oUDisksClient,
                                    QWidget *parent,
                                    Qt::WindowFlags f)
     : QWidget(parent, f),
-      m_OSProber(OSProber)
+      m_OSMap(OSMap)
 {
-    connect(m_OSProber, &OSProberType::Found,
-        [this](const QString &part, const QString &name, const QString &shortname) {
-        m_OSMap[part] = name;
-    });
-    connect(m_OSProber, &OSProberType::Finished, [=]() { getDriveObjects(); });
-    //m_OSProber->Probe();
-
     m_UDisksClient = oUDisksClient;
     connect(m_UDisksClient, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();

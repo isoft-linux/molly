@@ -20,18 +20,32 @@
 #define FILETOPART_WIDGET_H
 
 #include <QWidget>
+#include <QComboBox>
+
+#include <UDisks2Qt5/UDisksClient>
+
+#include "stepwidget.h"
 
 class FileToPartWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit FileToPartWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    explicit FileToPartWidget(UDisksClient *oUDisksClient, 
+                              QWidget *parent = Q_NULLPTR, 
+                              Qt::WindowFlags f = Qt::Tool);
     virtual ~FileToPartWidget();
 
 Q_SIGNALS:
     void next();
     void back();
+
+private:
+    void getDriveObjects();
+    void comboTextChanged(QString text);
+
+    UDisksClient *m_UDisksClient = Q_NULLPTR;
+    QComboBox *m_combo = Q_NULLPTR;
 };
 
 #endif // FILETOPART_WIDGET_H

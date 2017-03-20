@@ -39,13 +39,26 @@
 StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f) 
     : QWidget(parent, f) 
 {
+    m_UDisksClient = new UDisksClient;
+    m_UDisksClient->init();
+
+    auto *partToFile = new PartToFileWidget(m_UDisksClient);
+
     m_OSProber = new OSProberType("org.isoftlinux.OSProber",
                                   "/org/isoftlinux/OSProber",
                                   QDBusConnection::systemBus(),
                                   this);
-
-    m_UDisksClient = new UDisksClient;
-    m_UDisksClient->init();
+    connect(m_OSProber, &OSProberType::Found, 
+        [=](const QString &part, const QString &name, const QString &shortname) {
+        m_OSMap[part] = name;
+    });
+    connect(m_OSProber, &OSProberType::Finished, [=]() {
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_OSMap;
+#endif
+        partToFile->setOSMap(m_OSMap);
+    });
+    m_OSProber->Probe();
 
     setWindowTitle(tr("iSOFT Partition or Disk clone and restore Assistant"));
     setWindowIcon(QIcon::fromTheme("drive-harddisk"));
@@ -66,33 +79,33 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     auto *diskClone = new DiskcloneWidget;
     connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
     connect(diskClone, &DiskcloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
-    auto *partToFile = new PartToFileWidget(m_OSProber, m_UDisksClient);
+
     connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
     auto *partToPart = new PartToPartWidget;
     connect(partToPart, &PartToPartWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
-    auto *diskToFile = new DiskToFileWidget(m_OSProber, m_UDisksClient);
+    auto *diskToFile = new DiskToFileWidget(m_OSMap, m_UDisksClient);
     connect(diskToFile, &DiskToFileWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
     auto *diskToDisk = new DiskToDiskWidget;
     connect(diskToDisk, &DiskToDiskWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
     auto *restore = new RestoreWidget;
     connect(restore, &RestoreWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
     connect(restore, &RestoreWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
-    auto *fileToPart = new FileToPartWidget;
+    auto *fileToPart = new FileToPartWidget(m_UDisksClient);
     connect(fileToPart, &FileToPartWidget::back, [=]() { stack->setCurrentIndex(RESTORE); });
     auto *fileToDisk = new FileToDiskWidget;
     connect(fileToDisk, &FileToDiskWidget::back, [=]() { stack->setCurrentIndex(RESTORE); });
 
     // TODO: add your own widget here
-    stack->addWidget(wizard);       // 0
-    stack->addWidget(partClone);    // 1
-    stack->addWidget(diskClone);    // 2
-    stack->addWidget(partToFile);   // 3
-    stack->addWidget(partToPart);   // 4
-    stack->addWidget(diskToFile);   // 5
-    stack->addWidget(diskToDisk);   // 6
-    stack->addWidget(restore);      // 7
-    stack->addWidget(fileToPart);   // 8
-    stack->addWidget(fileToDisk);   // 9
+    stack->addWidget(wizard);           // 0
+    stack->addWidget(partClone);        // 1
+    stack->addWidget(diskClone);        // 2
+    stack->addWidget(partToFile);     // 3
+    stack->addWidget(partToPart);       // 4
+    stack->addWidget(diskToFile);       // 5
+    stack->addWidget(diskToDisk);       // 6
+    stack->addWidget(restore);          // 7
+    stack->addWidget(fileToPart);       // 8
+    stack->addWidget(fileToDisk);       // 9
     // for example, stack->addWidget(ditto);
     hbox->addWidget(stack);
 }
