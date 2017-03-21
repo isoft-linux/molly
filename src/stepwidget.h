@@ -36,6 +36,7 @@ typedef enum {
     DISKTODISK,
     RESTORE,
     FILETOPART,
+    PARTRESTORE,
     FILETODISK,
 } StepType;
 
