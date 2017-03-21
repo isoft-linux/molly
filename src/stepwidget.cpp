@@ -47,6 +47,8 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     auto *stack = new QStackedWidget;
     auto *partToFile = new PartToFileWidget(m_UDisksClient);
     connect(partToFile, &PartToFileWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
+    auto *partToPart = new PartToPartWidget(m_UDisksClient);
+    connect(partToPart, &PartToPartWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
     auto *partRestore = new PartRestoreWidget(m_UDisksClient);
     connect(partRestore, &PartRestoreWidget::back, [=]() { stack->setCurrentIndex(FILETOPART); });
 
@@ -63,6 +65,7 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
         qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_OSMap;
 #endif
         partToFile->setOSMap(m_OSMap);
+        partToPart->setOSMap(m_OSMap);
         partRestore->setOSMap(m_OSMap);
     });
     m_OSProber->Probe();
@@ -85,9 +88,6 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     auto *diskClone = new DiskcloneWidget;
     connect(diskClone, &DiskcloneWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
     connect(diskClone, &DiskcloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
-
-    auto *partToPart = new PartToPartWidget;
-    connect(partToPart, &PartToPartWidget::back, [=]() { stack->setCurrentIndex(PARTCLONE); });
     auto *diskToFile = new DiskToFileWidget(m_OSMap, m_UDisksClient);
     connect(diskToFile, &DiskToFileWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
     auto *diskToDisk = new DiskToDiskWidget;

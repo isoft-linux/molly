@@ -20,18 +20,47 @@
 #define PARTTOPART_WIDGET_H
 
 #include <QWidget>
+#include <QTableWidget>
+#include <QComboBox>
+
+#include <UDisks2Qt5/UDisksClient>
+#include <UDisks2Qt5/UDisksPartition>
+#include <UDisks2Qt5/UDisksBlock>
+#include <UDisks2Qt5/UDisksFilesystem>
+
+#include "stepwidget.h"
 
 class PartToPartWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit PartToPartWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    explicit PartToPartWidget(UDisksClient *oUDisksClient, 
+                              QWidget *parent = Q_NULLPTR, 
+                              Qt::WindowFlags f = Qt::Tool);
     virtual ~PartToPartWidget();
+    void setOSMap(OSMapType OSMap);
 
 Q_SIGNALS:
     void next();
     void back();
+
+private:
+    void getDriveObjects();
+    void comboTextChanged(QTableWidget *table, 
+                          QComboBox *combo, 
+                          QString text);
+    bool isPartAbleToShow(const UDisksPartition *part, 
+                          UDisksBlock *blk,
+                          UDisksFilesystem *fsys, 
+                          QTableWidgetItem *item);
+
+    UDisksClient *m_UDisksClient = Q_NULLPTR;
+    OSMapType m_OSMap;
+    QComboBox *m_fromCombo = Q_NULLPTR;
+    QComboBox *m_toCombo = Q_NULLPTR;
+    QTableWidget *m_fromTable = Q_NULLPTR;
+    QTableWidget *m_toTable = Q_NULLPTR;
 };
 
 #endif // PARTTOPART_WIDGET_H

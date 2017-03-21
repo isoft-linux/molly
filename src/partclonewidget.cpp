@@ -32,6 +32,7 @@ PartCloneWidget::PartCloneWidget(QWidget *parent, Qt::WindowFlags f)
     vbox->addWidget(toFileBtn);
     auto *toPartBtn = new QPushButton(QIcon(":/data/partition-to-partition.png"), tr("Partition to Partition"));
     toPartBtn->setFixedSize(254, 49);
+    connect(toPartBtn, &QPushButton::clicked, [=]() { Q_EMIT next(PARTTOPART); });
     vbox->addWidget(toPartBtn);
     auto *backBtn = new QPushButton(tr("Back"));
     backBtn->setFixedSize(254, 49);
