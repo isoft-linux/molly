@@ -330,21 +330,25 @@ void *DiskToFileWidget::errorRoutine(void *arg, void *msg)
 
 void *DiskToFileWidget::startRoutined2f(void *arg)
 {
-    if (m_part.isEmpty() || m_img.isEmpty())
-        return Q_NULLPTR;
-    if (!m_UDisksClientd2f)
-        return Q_NULLPTR;
     DiskToFileWidget *thisPtr = (DiskToFileWidget *)arg;
     QString srcDisk = m_part;
     QString dstPath = m_img;
     partType type = LIBPARTCLONE_UNKNOWN;
     QString strType;
-
+    QMap<QString,QString>::iterator it;
+    QMap<QString, QString> disksMap;
+    QString cmd;
     QDir dir(dstPath);
+
+    if (m_part.isEmpty() || m_img.isEmpty())
+        goto cleanup;
+    if (!m_UDisksClientd2f)
+        goto cleanup;
+
     if (!dir.exists()) {
         bool ok = dir.mkdir(dstPath);
         if (!ok) {
-            return Q_NULLPTR;
+            goto cleanup;
         }
     }
     /*
@@ -354,14 +358,13 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
     $ ./test-libpartclone-extfs -d -c -s /dev/sda2 -o /backup/sda2.img
     */
 
-    QString cmd = "/usr/sbin/parted -s " + srcDisk + " -- unit B print >  " +
+    cmd = "/usr/sbin/parted -s " + srcDisk + " -- unit B print >  " +
             dstPath + "/" + srcDisk.mid(5) + ".parted.txt ";
     system(qPrintable(cmd));
     cmd = "/usr/bin/dd if=" + srcDisk + " of=" +dstPath + "/" +
             srcDisk.mid(5) + ".start.bin" + " count=256 bs=4096 ";
     system(qPrintable(cmd));
 
-    QMap<QString, QString> disksMap;
     for (const UDisksObject::Ptr drvPtr : m_UDisksClientd2f->getObjects(UDisksObject::Drive)) {
         UDisksDrive *drv = drvPtr->drive();
         if (!drv)
@@ -384,7 +387,6 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
         qSort(parts.begin(), parts.end(), [](UDisksPartition *p1, UDisksPartition *p2) -> bool {
             return p1->number() < p2->number();
         });
-        bool needCloneFlag = true;
         for (const UDisksPartition *part : parts) {
             if (!part) {
                 continue;
@@ -403,21 +405,31 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
 
             if (blk2->idType() == "swap"  ||
                 !fsys->mountPoints().isEmpty()) {
-                needCloneFlag = false;
                 //break; // recheck failed!!!
             }
             disksMap.insert(blk2->preferredDevice(),blk2->idType());
         }
     }
 
-    QMap<QString,QString>::iterator it;
     for ( it = disksMap.begin(); it != disksMap.end(); ++it ) {
         strType = it.value();
         if (strType.startsWith("ext"))
             type = LIBPARTCLONE_EXTFS;
         else if (strType == "ntfs")
             type = LIBPARTCLONE_NTFS;
-        //if (it.key().mid(5) == "sdc1") type = LIBPARTCLONE_UNKNOWN;
+        else if (strType == "fat")
+            type = LIBPARTCLONE_FAT;
+        else if (strType == "vfat")
+            type = LIBPARTCLONE_FAT;
+        else if (strType == "exfat")
+            type = LIBPARTCLONE_EXFAT;
+        else if (strType == "minix")
+            type = LIBPARTCLONE_MINIX;
+        else
+            type = LIBPARTCLONE_UNKNOWN;
+
+        printf("%d,strType[%s]\n",__LINE__,qPrintable(strType));
+
         if (type != LIBPARTCLONE_UNKNOWN) {
             QString dst = dstPath + "/" + it.key().mid(5) + PART_CLONE_EXT_NAME;
 
@@ -441,13 +453,14 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
                    __LINE__,
                    qPrintable(it.key()),qPrintable(dst),
                    qPrintable(cmd));
+
             g_progressValue = 1;
             system(qPrintable(cmd));
             g_progressValue = 0;
         }
     }
     disksMap.clear();
-
+cleanup:
     Q_EMIT thisPtr->finished();
 
     pthread_detach(pthread_self());
