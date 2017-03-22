@@ -90,7 +90,7 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     connect(diskClone, &DiskcloneWidget::next, [=](StepType type) { stack->setCurrentIndex(type); });
     auto *diskToFile = new DiskToFileWidget(m_OSMap, m_UDisksClient);
     connect(diskToFile, &DiskToFileWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
-    auto *diskToDisk = new DiskToDiskWidget;
+    auto *diskToDisk = new DiskToDiskWidget(m_OSMap, m_UDisksClient);
     connect(diskToDisk, &DiskToDiskWidget::back, [=]() { stack->setCurrentIndex(DISKCLONE); });
     auto *restore = new RestoreWidget;
     connect(restore, &RestoreWidget::back, [=]() { stack->setCurrentIndex(WIZARD); });
