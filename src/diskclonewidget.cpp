@@ -34,6 +34,7 @@ DiskcloneWidget::DiskcloneWidget(QWidget *parent, Qt::WindowFlags f)
     vbox->addWidget(toFileBtn);
     auto *toDiskBtn = new QPushButton(QIcon(":/data/disk-to-disk.png"), tr("Disk to Disk"));
     toDiskBtn->setFixedSize(254, 49);
+    connect(toDiskBtn, &QPushButton::clicked, [=]() { Q_EMIT next(DISKTODISK); });
     vbox->addWidget(toDiskBtn);
     auto *backBtn = new QPushButton(tr("Back"));
     backBtn->setFixedSize(254, 49);
