@@ -68,7 +68,7 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
         partToPart->setOSMap(m_OSMap);
         partRestore->setOSMap(m_OSMap);
     });
-    m_OSProber->Probe();
+    //m_OSProber->Probe();
 
     setWindowTitle(tr("iSOFT Partition or Disk clone and restore Assistant"));
     setWindowIcon(QIcon::fromTheme("drive-harddisk"));

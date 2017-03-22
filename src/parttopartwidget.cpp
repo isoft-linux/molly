@@ -22,9 +22,19 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QPushButton>
+#include <QProgressBar>
 
 #include <UDisks2Qt5/UDisksObject>
 #include <UDisks2Qt5/UDisksDrive>
+
+#include <pthread.h>
+#include <libpartclone.h>
+
+static QProgressBar *m_progress = Q_NULLPTR;
+static pthread_t m_thread;
+static pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void *callBack(void *percent, void *remaining);
 
 PartToPartWidget::PartToPartWidget(UDisksClient *oUDisksClient, 
                                    QWidget *parent, 
@@ -62,15 +72,86 @@ PartToPartWidget::PartToPartWidget(UDisksClient *oUDisksClient,
     m_toTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_toTable->setSelectionMode(QAbstractItemView::SingleSelection);
     vbox->addWidget(m_toTable);
+    m_progress = new QProgressBar;
+    m_progress->setTextVisible(true);
+    m_progress->setVisible(false);
+    vbox->addWidget(m_progress);
     auto *hbox = new QHBoxLayout;
     vbox->addLayout(hbox);
     auto *confirmBtn = new QPushButton(tr("Confirm"));
+    connect(m_fromTable, &QTableWidget::itemSelectionChanged, [=]() {
+        QList<QTableWidgetItem *> items = m_fromTable->selectedItems();
+        if (items.size() > 2) {
+            bool ok;
+            m_fromPart = items[0]->text();
+            m_fromType = items[2]->text();
+            m_fromSize = items[1]->text().toLongLong(&ok);
+            comboTextChanged(m_toTable, m_toCombo, m_toCombo->currentText(), PARTTO);
+        }
+    });
+    connect(m_toTable, &QTableWidget::itemSelectionChanged, [=]() {
+        QList<QTableWidgetItem *> items = m_toTable->selectedItems();
+        bool ok;
+#ifdef DEBUG
+            qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_fromPart << items[0]->text() << m_fromType << items[2]->text() << m_fromSize << items[1]->text().toLongLong(&ok);
+#endif
+        if (items.size() > 2 && m_fromPart != items[0]->text() && 
+            m_fromType == items[2]->text() && 
+            m_fromSize <= items[1]->text().toLongLong(&ok)) {
+            confirmBtn->setEnabled(true);
+        }
+    });
     confirmBtn->setEnabled(false);
     hbox->addWidget(confirmBtn);
     auto *backBtn = new QPushButton(tr("Back"));
+    connect(confirmBtn, &QPushButton::clicked, [=]() {
+        m_progress->setVisible(true);
+        m_progress->setValue(0);
+        m_fromCombo->setEnabled(false);
+        m_fromTable->setEnabled(false);
+        m_toCombo->setEnabled(false);
+        m_toTable->setEnabled(false);
+        confirmBtn->setEnabled(false);
+        backBtn->setEnabled(false);
+        pthread_create(&m_thread, NULL, startRoutine, this);
+    });
     hbox->addWidget(backBtn);
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     setLayout(vbox);
+    
+    connect(this, &PartToPartWidget::error, [=](QString message) {
+        m_isError = true;
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_isError << message;
+#endif
+        QList<QTableWidgetItem *> items = m_toTable->selectedItems();
+        if (items.size() > 4) {
+            items[4]->setText(tr("Error"));
+        }
+        m_progress->setVisible(false);
+        m_fromCombo->setEnabled(true);
+        m_fromTable->setEnabled(true);
+        m_toCombo->setEnabled(true);
+        m_toTable->setEnabled(true);
+        confirmBtn->setEnabled(true);
+        backBtn->setEnabled(true);
+    });
+    connect(this, &PartToPartWidget::finished, [=]() {
+#ifdef DEBUG
+        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__;
+#endif
+        QList<QTableWidgetItem *> items = m_toTable->selectedItems();
+        if (!m_isError && items.size() > 4) {
+            items[4]->setText(tr("Finished"));
+        }
+        m_progress->setVisible(false);
+        m_fromCombo->setEnabled(true);
+        m_fromTable->setEnabled(true);
+        m_toCombo->setEnabled(true);
+        m_toTable->setEnabled(true);
+        confirmBtn->setEnabled(true);
+        backBtn->setEnabled(true);
+    });
 }
 
 PartToPartWidget::~PartToPartWidget()
@@ -80,14 +161,19 @@ PartToPartWidget::~PartToPartWidget()
 bool PartToPartWidget::isPartAbleToShow(const UDisksPartition *part, 
                                         UDisksBlock *blk,
                                         UDisksFilesystem *fsys, 
-                                        QTableWidgetItem *item) 
+                                        QTableWidgetItem *item, 
+                                        QString partStr, 
+                                        PartType type) 
 {
 #ifdef DEBUG
     if (fsys)
         qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << fsys->mountPoints();
 #endif
-    if (!part || part->isContainer() || !blk || blk->idType() == "swap" || 
-        !fsys || (!fsys->mountPoints().isEmpty() && !fsys->mountPoints().contains("/var/lib/os-prober/mount"))) {
+    if (!part || part->isContainer() || (type == PARTTO && part->size() < m_fromSize) || 
+        !blk || blk->idType() == "swap" || 
+        !fsys || (!fsys->mountPoints().isEmpty() && !fsys->mountPoints().contains(osProberMountPoint)) || 
+        (type == PARTTO && !m_fromType.isEmpty() && m_fromType != blk->idType()) || 
+        (type == PARTTO && !m_fromPart.isEmpty() && m_fromPart == partStr)) {
         item->setFlags(Qt::NoItemFlags);
         return false;
     }
@@ -98,7 +184,8 @@ bool PartToPartWidget::isPartAbleToShow(const UDisksPartition *part,
 
 void PartToPartWidget::comboTextChanged(QTableWidget *table, 
                                         QComboBox *combo, 
-                                        QString text) 
+                                        QString text, 
+                                        PartType type) 
 {
     if (!table || !combo || text.isEmpty())
         return;
@@ -132,26 +219,26 @@ void PartToPartWidget::comboTextChanged(QTableWidget *table,
         table->insertRow(row);
         QString partStr = text + QString::number(part->number());
         auto *item = new QTableWidgetItem(partStr);
-        isPartAbleToShow(part, blk, fsys, item);
+        isPartAbleToShow(part, blk, fsys, item, partStr, type);
         table->setItem(row, 0, item);
 
-        item = new QTableWidgetItem(QString::number(part->size() / 1073741824.0, 'f', 1) + " G");
-        isPartAbleToShow(part, blk, fsys, item);
+        item = new QTableWidgetItem(QString::number(part->size()));
+        isPartAbleToShow(part, blk, fsys, item, partStr, type);
         table->setItem(row, 1, item);
 
         item = new QTableWidgetItem(blk->idType());
-        isPartAbleToShow(part, blk, fsys, item);
+        isPartAbleToShow(part, blk, fsys, item, partStr, type);
         table->setItem(row, 2, item);
 
 #ifdef DEBUG
         qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_OSMap << partStr;
 #endif
         item = new QTableWidgetItem(m_OSMap[partStr]);
-        isPartAbleToShow(part, blk, fsys, item);
+        isPartAbleToShow(part, blk, fsys, item, partStr, type);
         table->setItem(row, 3, item);
 
         item = new QTableWidgetItem("");
-        isPartAbleToShow(part, blk, fsys, item);
+        isPartAbleToShow(part, blk, fsys, item, partStr, type);
         table->setItem(row, 4, item);
         row++;
     }
@@ -192,9 +279,9 @@ void PartToPartWidget::getDriveObjects()
     comboTextChanged(m_fromTable, m_fromCombo, m_fromCombo->currentText());
 
     connect(m_toCombo, &QComboBox::currentTextChanged, [=](const QString &text) {
-        comboTextChanged(m_toTable, m_toCombo, text);
+        comboTextChanged(m_toTable, m_toCombo, text, PARTTO);
     });
-    comboTextChanged(m_toTable, m_toCombo, m_toCombo->currentText());
+    comboTextChanged(m_toTable, m_toCombo, m_toCombo->currentText(), PARTTO);
 }
 
 void PartToPartWidget::setOSMap(OSMapType OSMap) 
@@ -202,6 +289,70 @@ void PartToPartWidget::setOSMap(OSMapType OSMap)
     m_OSMap = OSMap;
     comboTextChanged(m_fromTable, m_fromCombo, m_fromCombo->currentText());
     comboTextChanged(m_toTable, m_toCombo, m_toCombo->currentText());
+}
+
+static void *callBack(void *percent, void *remaining) 
+{
+    pthread_mutex_trylock(&m_mutex);
+    float *value = (float *)percent;
+    char *str = (char *)remaining;
+    if (m_progress) {
+        m_progress->setValue((int)*value);
+        m_progress->setFormat(QString::number((int)*value) + "% " + QString(str));
+    }
+    pthread_mutex_unlock(&m_mutex);
+    return Q_NULLPTR;
+}
+
+void *PartToPartWidget::errorRoutine(void *arg, void *msg) 
+{
+    PartToPartWidget *thisPtr = (PartToPartWidget *)arg;
+    if (!thisPtr)
+        return Q_NULLPTR;
+
+    char *str = (char *)msg;
+    Q_EMIT thisPtr->error(str ? QString(str) : "");
+
+    return Q_NULLPTR;
+}
+
+void *PartToPartWidget::startRoutine(void *arg) 
+{
+    PartToPartWidget *thisPtr = (PartToPartWidget *)arg;
+    if (!thisPtr || thisPtr->m_fromPart.isEmpty() || !thisPtr->m_toTable || 
+        !thisPtr->m_UDisksClient)
+        return Q_NULLPTR;
+    partType type = LIBPARTCLONE_UNKNOWN;
+    QList<QTableWidgetItem *> items = thisPtr->m_toTable->selectedItems();
+    if (items.isEmpty())
+        return Q_NULLPTR;
+    QString img = items[0]->text();
+
+    if (img.isEmpty())
+        return Q_NULLPTR;
+    UDisksObject::Ptr blkPtr = thisPtr->m_UDisksClient->getObject(QDBusObjectPath(udisksDBusPathPrefix + thisPtr->m_fromPart.mid(5)));
+    if (!blkPtr)
+        return Q_NULLPTR;
+    UDisksBlock *blk = blkPtr->block();
+    if (!blk)
+        return Q_NULLPTR;
+    QString strType = blk->idType();
+    if (strType.startsWith("ext"))
+        type = LIBPARTCLONE_EXTFS;
+    else if (strType == "ntfs")
+        type = LIBPARTCLONE_NTFS;
+    else if (strType == "vfat")
+        type = LIBPARTCLONE_FAT;
+    // TODO: more file system test
+    partClone(type, 
+              thisPtr->m_fromPart.toStdString().c_str(), 
+              img.toStdString().c_str(),
+              1,
+              callBack,
+              errorRoutine,
+              thisPtr);
+    Q_EMIT thisPtr->finished();
+    return Q_NULLPTR;
 }
 
 #include "moc_parttopartwidget.cpp"

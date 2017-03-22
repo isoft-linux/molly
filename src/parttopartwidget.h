@@ -30,6 +30,11 @@
 
 #include "stepwidget.h"
 
+typedef enum { 
+    PARTFROM, 
+    PARTTO
+} PartType;
+
 class PartToPartWidget : public QWidget
 {
     Q_OBJECT
@@ -44,16 +49,23 @@ public:
 Q_SIGNALS:
     void next();
     void back();
+    void error(QString message);
+    void finished();
 
 private:
     void getDriveObjects();
     void comboTextChanged(QTableWidget *table, 
                           QComboBox *combo, 
-                          QString text);
+                          QString text, 
+                          PartType type = PARTFROM);
     bool isPartAbleToShow(const UDisksPartition *part, 
                           UDisksBlock *blk,
                           UDisksFilesystem *fsys, 
-                          QTableWidgetItem *item);
+                          QTableWidgetItem *item, 
+                          QString partStr, 
+                          PartType type);
+    static void *startRoutine(void *arg);
+    static void *errorRoutine(void *arg, void *msg);
 
     UDisksClient *m_UDisksClient = Q_NULLPTR;
     OSMapType m_OSMap;
@@ -61,6 +73,10 @@ private:
     QComboBox *m_toCombo = Q_NULLPTR;
     QTableWidget *m_fromTable = Q_NULLPTR;
     QTableWidget *m_toTable = Q_NULLPTR;
+    QString m_fromPart = "";
+    QString m_fromType = "";
+    unsigned long long m_fromSize = 0;
+    bool m_isError = false;
 };
 
 #endif // PARTTOPART_WIDGET_H

@@ -45,6 +45,7 @@ using OSMapType = QMap<QString, QString>;
 
 const QString udisksDBusPathPrefix = "/org/freedesktop/UDisks2/block_devices/";
 const QString partImgExt = ".part";
+const QString osProberMountPoint = "/var/lib/os-prober/mount";
 
 class StepWidget : public QWidget
 {
