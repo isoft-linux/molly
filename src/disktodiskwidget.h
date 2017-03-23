@@ -62,7 +62,6 @@ private:
     QPushButton *m_cloneBtn = Q_NULLPTR;
     OSMapType m_OSMap;
     QProgressBar *m_progress;
-    bool m_isClone = true;
     bool m_isError = false;
     QTimer *m_timer = Q_NULLPTR;
 

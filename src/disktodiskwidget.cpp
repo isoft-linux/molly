@@ -73,7 +73,8 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
     label = new QLabel(tr("Will copy to:"));
     m_table = new QTableWidget;
     QStringList headers {tr("Name"), tr("Disk"), tr("Serial"), tr("Size"), tr("UsedSize"), tr("State")};
-    m_table->setColumnCount(headers.size());
+    m_table->setColumnCount(headers.size()+1);
+    m_table->hideColumn(headers.size());
     m_table->setHorizontalHeaderLabels(headers);
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -83,8 +84,41 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
     connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size()) {
-            //edit->setText("");
             label->setText(items[1]->text() + " " + tr("Will copy to:"));
+            char src[32]="";
+            snprintf(src,sizeof(src),"%s",qPrintable(items[3]->text()));
+            uint64_t result = 0ULL;
+            get_size(src,&result);
+            int rows = m_toTable->rowCount();
+            int columns = m_toTable->columnCount();
+            for (int i = 0; i<rows;++i){
+                QTableWidgetItem *cell= m_toTable->item(i,3);
+                if (cell) {
+                    char src2[32]="";
+                    snprintf(src2,sizeof(src2),"%s",qPrintable(cell->text()));
+                    uint64_t result2 = 0ULL;
+                    get_size(src2,&result2);
+                    for (int j = 0;j<columns;++j){
+                        cell = m_toTable->item(i,6); // showflag[1] or [0]
+                        if (cell) {
+                            if (cell->text() == "1") {
+                                cell = m_toTable->item(i,j);
+                                if (cell) {
+                                  cell->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+                                }
+                            }
+                        }
+                    }
+                    for (int j = 0;j<columns;++j){
+                        cell= m_toTable->item(i,j);
+                        if (cell) {
+                            if (result > result2 && cell->flags() !=Qt::NoItemFlags) {
+                              cell->setFlags(Qt::NoItemFlags);
+                            }
+                        }
+                    }
+                }
+            }
         }
     });
     vbox->addWidget(m_table);
@@ -92,7 +126,8 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
     vbox->addWidget(label);
 
     m_toTable = new QTableWidget;
-    m_toTable->setColumnCount(headers.size());
+    m_toTable->setColumnCount(headers.size()+1);
+    m_toTable->hideColumn(headers.size());
     m_toTable->setHorizontalHeaderLabels(headers);
     m_toTable->verticalHeader()->setVisible(false);
     m_toTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -106,29 +141,21 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
 
     m_progressd2f->setVisible(false);
     connect(m_cloneBtn, &QPushButton::clicked, [=]() {
-        if (m_isClone) {
-            QList<QTableWidgetItem *> items = m_table->selectedItems();
-            QList<QTableWidgetItem *> toItems = m_toTable->selectedItems();
-            if (items.size() && toItems.size()) {
-                m_progressd2f->setVisible(true);
-                m_progressd2f->setValue(0);
-                m_cloneBtn->setText(tr("Cancel"));
-                m_srcDisk = items[1]->text();
-                m_dstDisk = toItems[1]->text(); // /dev/sda
-                m_timer->stop();
-                printf("\nfrom[%s],to[%s]\n",qPrintable(items[1]->text()),qPrintable(toItems[1]->text()));
-
-                pthread_create(&m_thread, NULL, startRoutined2d, this);
-
-                m_timer->start(500);
-            }
-        } else {
-            m_progressd2f->setVisible(false);
-            m_cloneBtn->setText(tr("Clone"));
-            partCloneCancel(1);
+        QList<QTableWidgetItem *> items = m_table->selectedItems();
+        QList<QTableWidgetItem *> toItems = m_toTable->selectedItems();
+        if (items.size() && toItems.size()) {
+            m_progressd2f->setVisible(true);
+            m_progressd2f->setValue(0);
+            m_cloneBtn->setEnabled(false);
+            m_srcDisk = items[1]->text();
+            m_dstDisk = toItems[1]->text(); // /dev/sda
             m_timer->stop();
+            printf("\n%d,from[%s],to[%s]\n",__LINE__,qPrintable(items[1]->text()),qPrintable(toItems[1]->text()));
+
+            pthread_create(&m_thread, NULL, startRoutined2d, this);
+
+            m_timer->start(500);
         }
-        m_isClone = !m_isClone;
     });
     hbox->addWidget(m_cloneBtn);
     auto *backBtn = new QPushButton(tr("Back"));
@@ -142,24 +169,21 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
 #ifdef DEBUG
         qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_isError << message;
 #endif
-        m_isClone = true;
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size() > 4) {
             items[5]->setText(tr("Error"));
         }
         m_progressd2f->setVisible(false);
-        m_cloneBtn->setText(tr("Clone"));
+        m_cloneBtn->setEnabled(true);
         m_table->setEnabled(true);
         backBtn->setEnabled(true);
     });
     connect(this, &DiskToDiskWidget::finished, [=]() {
-        m_isClone = true;
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (!m_isError && items.size() > 4) {
             items[5]->setText(tr("Finished"));
         }
         m_progressd2f->setVisible(false);
-        m_cloneBtn->setText(tr("Clone"));
         m_cloneBtn->setEnabled(true);
         m_table->setEnabled(true);
         backBtn->setEnabled(true);
@@ -258,6 +282,15 @@ void DiskToDiskWidget::getDriveObjects()
         isDiskAbleToShow(showFlag,item);
         m_table->setItem(row, 5, item);
 
+        QString showStr ="";
+        if (showFlag) {
+            showStr = "1";
+        } else
+            showStr = "0";
+        item = new QTableWidgetItem(showStr);
+        isDiskAbleToShow(showFlag,item);
+        m_table->setItem(row, 6, item);
+
         row++;
     }
 
@@ -265,7 +298,6 @@ void DiskToDiskWidget::getDriveObjects()
     int columns = m_table->columnCount();
     m_toTable->setColumnCount(columns);
     m_toTable->setRowCount(rows);
-    // todo:disable some items.
     for (int i = 0; i<columns;++i){
         for (int j = 0;j<rows;++j){
           QTableWidgetItem *cell= m_table->item(j,i);
@@ -291,8 +323,10 @@ void DiskToDiskWidget::advanceProgressBar()
         char pos[64] = "";
         char tsize[64] = "";
         int value = monitor_processes("dd",pos,tsize);
-        m_progressd2f->setValue(value);
-        m_progressd2f->setFormat(QString::number(value) + "% " + QString(pos) + "/" + QString(tsize) );
+        if (value >=0 && value <= 100) {
+            m_progressd2f->setValue(value);
+            m_progressd2f->setFormat(QString::number(value) + "% " + QString(pos) + "/" + QString(tsize) );
+        }
     }
 }
 
@@ -302,8 +336,11 @@ static void *callBackd2f(void *percent, void *remaining)
     float *value = (float *)percent;
     char *str = (char *)remaining;
     if (m_progressd2f) {
-        m_progressd2f->setValue((int)*value);
-        m_progressd2f->setFormat(QString::number((int)*value) + "% " + QString(str));
+        int per = (int)*value;
+        if (per >=0 && per <= 100) {
+            m_progressd2f->setValue(per);
+            m_progressd2f->setFormat(QString::number(per) + "% " + QString(str));
+        }
     }
     pthread_mutex_unlock(&m_mutex);
     return Q_NULLPTR;
@@ -343,7 +380,7 @@ void *DiskToDiskWidget::startRoutined2d(void *arg)
            qPrintable(cmd));
 
     g_progressValue = 1;
-    //system(qPrintable(cmd));
+    system(qPrintable(cmd));
     g_progressValue = 0;
 
 cleanup:

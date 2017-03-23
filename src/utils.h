@@ -36,6 +36,6 @@
 
 extern void format_size(uint64_t size, char *result);
 extern int monitor_processes(const char *cmd,char *pos,char *tsize);
-
+extern void get_size(char src[32],uint64_t *result);
 #endif
 

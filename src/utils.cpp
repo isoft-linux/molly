@@ -73,6 +73,49 @@ void format_size(uint64_t size, char *result)
     return;
 }
 
+void get_size(char src[32],uint64_t *result)
+{
+    uint64_t multiplier = 0ULL,value = 0ULL;
+    int i = 0, pos = -1;
+    if (src == NULL) {
+        return;
+    }
+    char *nptr = src;
+    char unit[8]="";
+    while (*nptr && isspace ( *nptr ) ) {
+        ++ nptr;
+    }
+    if (nptr == NULL) {
+        return;
+    }
+    value = strtoull(nptr,NULL,10);
+    while (*nptr && isspace( *nptr ) == 0 ) {
+        ++ nptr;
+    }
+    nptr ++;
+    if (nptr == NULL) {
+        return;
+    }
+    snprintf(unit,sizeof(unit),"%s",nptr);
+    multiplier = exbibytes;
+    for (i = 0 ; i < DIM(sizes) ; i++) {
+        if (strcmp(sizes[i],unit) == 0) {
+            pos = i;
+            break;
+        }
+    }
+    if (pos < 0) {
+        return;
+    }
+    for (i = 0 ; i < pos ; i++, multiplier /= 1024) {
+        if (multiplier <= 0) {
+            multiplier = 1;
+            break;
+        }
+    }
+    *result = multiplier * value;
+    return;
+}
 
 char is_numeric(char *str)
 {
