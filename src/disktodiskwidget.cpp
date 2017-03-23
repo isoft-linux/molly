@@ -350,6 +350,7 @@ cleanup:
     Q_EMIT thisPtr->finished();
 
     pthread_detach(pthread_self());
+    return Q_NULLPTR;
 }
 
 
