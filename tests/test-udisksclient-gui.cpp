@@ -298,5 +298,6 @@ void *thread_test(void *arg)
         arg = NULL;
     }
     pthread_detach(pthread_self());
+    return Q_NULLPTR;
 }
 #endif

@@ -319,6 +319,7 @@ void *PartRestoreWidget::startRoutine(void *arg)
                 errorRoutine,
                 thisPtr);
     Q_EMIT thisPtr->finished();
+    return Q_NULLPTR;
 }
 
 #include "moc_partrestorewidget.cpp"
