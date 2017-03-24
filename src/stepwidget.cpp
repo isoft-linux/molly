@@ -101,7 +101,7 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
         partRestore->setImgPath(imgPath);
         stack->setCurrentIndex(PARTRESTORE);
     });
-    auto *fileToDisk = new FileToDiskWidget;
+    auto *fileToDisk = new FileToDiskWidget(m_UDisksClient);
     connect(fileToDisk, &FileToDiskWidget::back, [=]() { stack->setCurrentIndex(RESTORE); });
 
     // TODO: add your own widget here

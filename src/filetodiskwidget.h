@@ -20,18 +20,39 @@
 #define FILETODISK_WIDGET_H
 
 #include <QWidget>
-
+#include <QTreeWidget>
+#include <QPushButton>
+#include <QProgressBar>
+#include <QComboBox>
+#include <UDisks2Qt5/UDisksClient>
+#include <UDisks2Qt5/UDisksPartition>
+#include <UDisks2Qt5/UDisksBlock>
+#include <UDisks2Qt5/UDisksFilesystem>
+#include <UDisks2Qt5/UDisksDrive>
 class FileToDiskWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit FileToDiskWidget(QWidget *parent = Q_NULLPTR, Qt::WindowFlags f = Qt::Tool);
+    explicit FileToDiskWidget(UDisksClient *oUDisksClient,
+                              QWidget *parent = Q_NULLPTR,
+                              Qt::WindowFlags f = Qt::Tool);
     virtual ~FileToDiskWidget();
 
+private:
+    QTreeWidget *m_treeWidget = Q_NULLPTR;
+    QPushButton *m_browseBtn = Q_NULLPTR;
+    QPushButton *m_cloneBtn = Q_NULLPTR;
+    UDisksClient *m_UDisksClient = Q_NULLPTR;
+    QComboBox *m_combo = Q_NULLPTR;
+    void getDriveObjects();
+    void comboTextChanged(QString text);
 Q_SIGNALS:
     void next();
     void back();
+
+private slots:
+    void setSelectedItem(QTreeWidgetItem *item,int index);
 };
 
 #endif // FILETODISK_WIDGET_H
