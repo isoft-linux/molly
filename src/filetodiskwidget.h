@@ -42,13 +42,14 @@ public:
 private:
     QTreeWidget *m_treeWidget = Q_NULLPTR;
     QPushButton *m_browseBtn = Q_NULLPTR;
-    QPushButton *m_cloneBtn = Q_NULLPTR;
+    QPushButton *m_nextBtn = Q_NULLPTR;
     UDisksClient *m_UDisksClient = Q_NULLPTR;
     QComboBox *m_combo = Q_NULLPTR;
+    QLineEdit *m_edit = Q_NULLPTR;
     void getDriveObjects();
     void comboTextChanged(QString text);
 Q_SIGNALS:
-    void next();
+    void next(QString srcDiskPath);
     void back();
 
 private slots:

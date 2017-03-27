@@ -339,6 +339,10 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
     QMap<QString, QString> disksMap;
     QString cmd;
     QDir dir(dstPath);
+    int backupOK = -1;
+    unsigned long long diskSize = 0ULL;
+    int diskNumber = 0;
+    QString cfgFile = dstPath + "/" + DISKCFGFILE;
 
     if (m_part.isEmpty() || m_img.isEmpty())
         goto cleanup;
@@ -363,7 +367,10 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
     system(qPrintable(cmd));
     cmd = "/usr/bin/dd if=" + srcDisk + " of=" +dstPath + "/" +
             srcDisk.mid(5) + ".start.bin" + " count=256 bs=4096 ";
-    system(qPrintable(cmd));
+    backupOK = system(qPrintable(cmd));
+    if (backupOK != 0) {
+        //error
+    }
 
     for (const UDisksObject::Ptr drvPtr : m_UDisksClientd2f->getObjects(UDisksObject::Drive)) {
         UDisksDrive *drv = drvPtr->drive();
@@ -378,6 +385,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
         if (sdx != srcDisk) {
             continue;
         }
+        diskSize = blk->size();
         QDBusObjectPath tblPath = QDBusObjectPath(udisksDBusPathPrefix + sdx.mid(5));
         QList<UDisksPartition *> parts;
         for (const UDisksObject::Ptr partPtr : m_UDisksClientd2f->getPartitions(tblPath)) {
@@ -410,7 +418,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
             disksMap.insert(blk2->preferredDevice(),blk2->idType());
         }
     }
-
+    diskNumber = 0;
     for ( it = disksMap.begin(); it != disksMap.end(); ++it ) {
         strType = it.value();
         if (strType.startsWith("ext"))
@@ -429,6 +437,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
             type = LIBPARTCLONE_UNKNOWN;
 
         printf("%d,strType[%s]\n",__LINE__,qPrintable(strType));
+        diskNumber ++;
 
         if (type != LIBPARTCLONE_UNKNOWN) {
             QString dst = dstPath + "/" + it.key().mid(5) + PART_CLONE_EXT_NAME;
@@ -437,13 +446,16 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
                    __LINE__,
                    qPrintable(it.key()),qPrintable(dst));
 
-            partClone(type,
+            backupOK = partClone(type,
                   (char *)qPrintable(it.key()),
                   (char *)qPrintable(dst),
                   1,
                   callBackd2f,
                   errorRoutine,
                   thisPtr);
+            if (backupOK != 0) {
+                //error
+            }
         } else {
             // meet [permission denied]!!!
             QString dst = dstPath + "/" + it.key().mid(5) + PART_CLONE_EXT_NAME + ".dd";
@@ -455,12 +467,30 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
                    qPrintable(cmd));
 
             g_progressValue = 1;
-            system(qPrintable(cmd));
+            backupOK = system(qPrintable(cmd));
             g_progressValue = 0;
+
+            if (backupOK != 0) {
+                //error
+            }
         }
     }
     disksMap.clear();
+    backupOK = 0;
+
+    diskcfginfo_t cfgInfo;
+    memset(&cfgInfo,0,sizeof(diskcfginfo_t));
+    cfgInfo.diskSize = diskSize;
+    cfgInfo.partNumber = diskNumber;
+    if (setDiskCfgInfo(qPrintable(cfgFile),&cfgInfo) != 0) {
+        printf("%d,disktofile:write file error!!!\n",__LINE__);
+    }
+
 cleanup:
+
+    if (backupOK != 0) {
+        printf("%d,disktofile:error!!!\n",__LINE__);
+    }
     Q_EMIT thisPtr->finished();
 
     pthread_detach(pthread_self());

@@ -34,8 +34,18 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#define DISKCFGFILE ".disk.cfg"
+
+typedef struct {
+    unsigned long long diskSize;
+    char startBinMd5[128];
+    int  partNumber;
+} diskcfginfo_t;
+
 extern void format_size(uint64_t size, char *result);
 extern int monitor_processes(const char *cmd,char *pos,char *tsize);
 extern void get_size(char src[32],uint64_t *result);
+extern int setDiskCfgInfo(const char *file,diskcfginfo_t *cfgInfo);
+extern int getDiskCfgInfo(const char *file,diskcfginfo_t *cfgInfo);
 #endif
 

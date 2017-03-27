@@ -51,7 +51,6 @@ typedef struct result_t {
     fdinfo_t fd;
 } result_t;
 
-
 void format_size(uint64_t size, char *result)
 {
     uint64_t multiplier;
@@ -337,3 +336,30 @@ int monitor_processes(const char *cmd,char *pos,char *tsize)
     return (int)perc;
 }
 
+int setDiskCfgInfo(const char *file,diskcfginfo_t *cfgInfo)
+{
+    if (file == NULL || cfgInfo == NULL) {
+        return -1;
+    }
+    int fd = open(file,O_RDWR | O_CREAT | O_TRUNC,0640);
+    if (fd < 0) {
+        return -1;
+    }
+    write(fd,cfgInfo,sizeof(diskcfginfo_t));
+    close(fd);
+    return 0;
+}
+
+int getDiskCfgInfo(const char *file,diskcfginfo_t *cfgInfo)
+{
+    if (file == NULL || cfgInfo == NULL) {
+        return -1;
+    }
+    int fd = open(file,O_RDONLY);
+    if (fd < 0) {
+        return -1;
+    }
+    read(fd,cfgInfo,sizeof(diskcfginfo_t));
+    close(fd);
+    return 0;
+}

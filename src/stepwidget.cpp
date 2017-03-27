@@ -37,6 +37,7 @@
 #include "filetopartwidget.h"
 #include "partrestorewidget.h"
 #include "filetodiskwidget.h"
+#include "diskrestorewidget.h"
 
 StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f) 
     : QWidget(parent, f) 
@@ -101,8 +102,14 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
         partRestore->setImgPath(imgPath);
         stack->setCurrentIndex(PARTRESTORE);
     });
+    auto *diskRestore = new DiskRestoreWidget(m_OSMap, m_UDisksClient);
+    connect(diskRestore, &DiskRestoreWidget::back, [=]() { stack->setCurrentIndex(FILETODISK); });
     auto *fileToDisk = new FileToDiskWidget(m_UDisksClient);
     connect(fileToDisk, &FileToDiskWidget::back, [=]() { stack->setCurrentIndex(RESTORE); });
+    connect(fileToDisk, &FileToDiskWidget::next, [=](QString srcDiskPath) {
+        diskRestore->setSrcDiskPath(srcDiskPath);
+        stack->setCurrentIndex(DISKRESTORE);
+    });
 
     // TODO: add your own widget here
     stack->addWidget(wizard);           // 0
@@ -116,6 +123,8 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
     stack->addWidget(fileToPart);       // 8
     stack->addWidget(partRestore);      // 9
     stack->addWidget(fileToDisk);       // 10
+    stack->addWidget(diskRestore);
+
     // for example, stack->addWidget(ditto);
     hbox->addWidget(stack);
 }

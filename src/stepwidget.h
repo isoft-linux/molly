@@ -38,6 +38,7 @@ typedef enum {
     FILETOPART,
     PARTRESTORE,
     FILETODISK,
+    DISKRESTORE
 } StepType;
 
 using OSProberType = org::isoftlinux::OSProber;

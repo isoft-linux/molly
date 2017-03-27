@@ -18,6 +18,7 @@
 
 #include "filetodiskwidget.h"
 #include "imgdialog.h"
+#include "utils.h"
 #include <libpartclone.h>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -29,6 +30,7 @@
 #include <QTableWidgetItem>
 #include <QTreeWidgetItem>
 #include <QStandardPaths>
+
 static UDisksClient *m_UDisksClientd2f = Q_NULLPTR;
 static QProgressBar *m_progressd2f = Q_NULLPTR;
 
@@ -62,14 +64,25 @@ FileToDiskWidget::FileToDiskWidget(UDisksClient *oUDisksClient,QWidget *parent, 
     m_treeWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_treeWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     m_browseBtn = new QPushButton(tr("Browse"));
-    m_cloneBtn = new QPushButton(tr("Next"));
-    auto *edit = new QLineEdit;
-    connect(edit, &QLineEdit::textChanged, [=](const QString &text) {
+    m_nextBtn = new QPushButton(tr("Next"));
+    m_edit = new QLineEdit;
+    connect(m_edit, &QLineEdit::textChanged, [=](const QString &text) {
         QList<QTreeWidgetItem *> items = m_treeWidget->selectedItems();
-        m_cloneBtn->setEnabled(items.size() && ImgDialog::isPathWritable(text));
+        m_nextBtn->setEnabled(items.size());
+    });
+    connect(m_nextBtn, &QPushButton::clicked, [=]() {
+        QString srcDiskPath = m_edit->text();
+        if (QDir(srcDiskPath).exists()) {
+            Q_EMIT next(srcDiskPath);
+            srcDiskPath = "";
+        }
     });
     connect(m_browseBtn, &QPushButton::clicked, [=]() {
-        QList<QTreeWidgetItem *> items = m_treeWidget->selectedItems();
+        QString fileName = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+                QStandardPaths::writableLocation(QStandardPaths::HomeLocation),
+                QFileDialog::DontResolveSymlinks);
+        m_edit->setText(fileName);
+        m_nextBtn->setEnabled(true);
     });
 
     m_browseBtn->setEnabled(true);
@@ -79,12 +92,12 @@ FileToDiskWidget::FileToDiskWidget(UDisksClient *oUDisksClient,QWidget *parent, 
 
     vbox->addWidget(m_treeWidget);
     hbox = new QHBoxLayout;
-    hbox->addWidget(edit);
+    hbox->addWidget(m_edit);
     hbox->addWidget(m_browseBtn);
     vbox->addLayout(hbox);
     hbox = new QHBoxLayout;
 
-    hbox->addWidget(m_cloneBtn);
+    hbox->addWidget(m_nextBtn);
     auto *backBtn = new QPushButton(tr("Back"));
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     hbox->addWidget(backBtn);
@@ -96,15 +109,18 @@ FileToDiskWidget::FileToDiskWidget(UDisksClient *oUDisksClient,QWidget *parent, 
 FileToDiskWidget::~FileToDiskWidget()
 {
 }
+
 void FileToDiskWidget::setSelectedItem(QTreeWidgetItem *item,int index)
 {
     QTreeWidgetItem *parent = item->parent();
     if(NULL==parent) {
+        m_edit->setText(item->text(0));
         printf("\nroot [%d],[%s][%s][%s]\n",index,qPrintable(item->text(0)),qPrintable(item->text(1)),qPrintable(item->text(2)));
         return;
     }
     printf("\n[%d],[%s]\n",index,qPrintable(parent->text(0)));
 }
+
 const QString udisksDBusPathPrefix = "/org/freedesktop/UDisks2/block_devices/";
 const QString partImgExt = ".part";
 const QString osProberMountPoint = "/var/lib/os-prober/mount";
@@ -148,20 +164,28 @@ void FileToDiskWidget::comboTextChanged(QString text)
             for (QString name : imgDir.entryList()) {
                 // todo:imgPath is path...
                 QString imgPath = imgDir.path() + "/" + name;
+                QString cfgPath = imgPath + "/" + DISKCFGFILE;
+                QFile   cfgFile(cfgPath);
+                if (!cfgFile.exists()) {
+                    continue;
+                }
+                diskcfginfo_t cfgInfo;
+                memset(&cfgInfo,0,sizeof(diskcfginfo_t));
+                if (getDiskCfgInfo(qPrintable(cfgPath),&cfgInfo) != 0) {
+                    //meet error
+                }
+                char sSize[32]="";
+                format_size(cfgInfo.diskSize,sSize);
 
                 QStringList list;
                 QFile rootFile(imgPath);
-                list << QString(imgPath) << QString::number(rootFile.size()) << "not backuped";
+                list << QString(imgPath) << QString(sSize) << "not backuped";
                 QTreeWidgetItem *rootNode = new QTreeWidgetItem(m_treeWidget,list);
                 list.clear();
 
                 QDir diskDir = QDir(imgPath);
+                diskDir.setFilter(QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot);
                 for (QString imgName : diskDir.entryList()) {
-                    QString partPath = diskDir.path() + "/" + imgName; // [. .. .txt] [xx.part] [xyz.part.dd]
-                    partInfo_t info;
-                    memset(&info,0,sizeof(partInfo_t));
-                    //partInfo(imgPath.toStdString().c_str(), &info);
-
                     QTreeWidgetItem *sdx1 = new QTreeWidgetItem(rootNode,QStringList(imgName));
                     sdx1->setFlags(Qt::NoItemFlags);
                     rootNode->addChild(sdx1);
