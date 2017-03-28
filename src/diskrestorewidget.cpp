@@ -78,7 +78,7 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_cloneBtn = new QPushButton(tr("Clone"));
+    m_cloneBtn = new QPushButton(tr("Restore"));
 
     connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
@@ -314,6 +314,18 @@ static void *callBackd2f(void *percent, void *remaining)
     pthread_mutex_unlock(&m_mutex);
     return Q_NULLPTR;
 }
+static void *callBack(void *percent, void *remaining)
+{
+    pthread_mutex_trylock(&m_mutex);
+    float *value = (float *)percent;
+    char *str = (char *)remaining;
+    if (m_progressd2f) {
+        m_progressd2f->setValue((int)*value);
+        m_progressd2f->setFormat(QString::number((int)*value) + "% " + QString(str));
+    }
+    pthread_mutex_unlock(&m_mutex);
+    return Q_NULLPTR;
+}
 
 void *DiskRestoreWidget::errorRoutine(void *arg, void *msg)
 {
@@ -334,30 +346,94 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
     QString dstPath = m_dstDisk;
     QString cmd;
     QDir diskDir = QDir(srcDisk);
+    QList<QString> parts;
 
     if (m_dstDisk.isEmpty() || m_srcDisk.isEmpty())
         goto cleanup;
-
-    diskDir.setFilter(QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot);
-    for (QString imgName : diskDir.entryList()) {
-        printf("%d,[%s]\n",
-               __LINE__,qPrintable(imgName));
-        // todo:use api or dd to restore disk part.
-    }
-
     /*
-    $ dd if=/dev/sda of=/dev/sdb bs=4096
+    $ dd if=/dev/sda of=sdx.start.bin count=256 bs=4096 ==>DISKSTARTBIN
+    $ ./test-libpartclone-ntfs -d -c -s /dev/sda1 -o /backup/sda1.img
+    $ ./test-libpartclone-extfs -d -c -s /dev/sda2 -o /backup/sda2.img
     */
-
-    cmd = "/usr/bin/dd if=" + srcDisk + " of=" + dstPath + " bs=4096 ";
-
-    printf("%d,will use dd to clone[%s]to[%s],dd cmd[%s]\n",
-           __LINE__,
-           qPrintable(srcDisk),qPrintable(dstPath),
-           qPrintable(cmd));
-
+    parts.clear();
+    diskDir.setFilter(QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot);
+    for (QString part : diskDir.entryList()) {
+        if (part.contains("parted.txt")) {
+            continue;
+        }
+        if (part.contains(DISK_CLONE_EXT_NAME)) {
+            parts.append(part);
+        }
+    }
+    if (parts.size() < 1) {
+        goto cleanup;
+    }
+    qSort(parts.begin(), parts.end());
     g_progressValue = 1;
-    //system(qPrintable(cmd));
+    cmd = "/usr/bin/dd if=" + srcDisk + "/" + DISKSTARTBIN + " of=" + dstPath + " bs=4096 ";
+    system(qPrintable(cmd));
+    printf("%d,no.1,bin[%s]\n",__LINE__,qPrintable(cmd));
+    for (int i = 0; i < parts.size(); i++) {
+        printf("%d,part[%s]\n",__LINE__,qPrintable(parts.at(i)));
+        QString srcPart = srcDisk + "/" + parts.at(i);
+        QString dstPart = "";
+        QString sdx = "";
+        QString ddStr = QString(DISK_CLONE_EXT_NAME) + QString(".dd");
+        if (parts.at(i).contains(ddStr) ) {
+            sdx = parts.at(i).left(parts.at(i).size() - ddStr.size());
+            cmd = "/usr/bin/dd if=" + srcPart + " of=" + dstPath + "/" + sdx + " bs=4096 ";
+            printf("%d,no.2,dd[%s]\n",__LINE__,qPrintable(cmd));
+            system(qPrintable(cmd));
+        } else {
+            sdx = parts.at(i).left(parts.at(i).size() - strlen(DISK_CLONE_EXT_NAME) );
+            char sdNum[256]="";
+            int number = 0;
+            snprintf(sdNum,sizeof(sdNum),"%s",qPrintable(sdx));
+            for (int j = 0; j < strlen(sdNum); j++) {
+                number = atoi((const char *)&sdNum[j]);
+                if (number == 0) {
+                    continue;
+                } else {
+                    break;
+                }
+            }
+            dstPart = dstPath + QString::number(number);
+            partInfo_t info;
+            memset(&info,0,sizeof(partInfo_t));
+            partInfo(qPrintable(srcPart), &info);
+            QString strType(info.type);
+            partType type = LIBPARTCLONE_UNKNOWN;
+            if (info.type[0] == 0) {
+                printf("\n\n%d,part[%s] file format error!!!\n\n\n",__LINE__,qPrintable(srcPart));
+                continue;
+            }
+            if (strType.startsWith("ext",Qt::CaseInsensitive))
+                type = LIBPARTCLONE_EXTFS;
+            else if (strType.compare("ntfs",Qt::CaseInsensitive) == 0)
+                type = LIBPARTCLONE_NTFS;
+            else if (strType.compare("fat",Qt::CaseInsensitive) == 0)
+                type = LIBPARTCLONE_FAT;
+            else if (strType.compare("vfat",Qt::CaseInsensitive) == 0)
+                type = LIBPARTCLONE_FAT;
+            else if (strType.compare("exfat",Qt::CaseInsensitive) == 0)
+                type = LIBPARTCLONE_EXFAT;
+            else if (strType.compare("minix",Qt::CaseInsensitive) == 0)
+                type = LIBPARTCLONE_MINIX;
+            else
+                type = LIBPARTCLONE_UNKNOWN;
+
+            printf("%d,no.2,part:src[%s],dst[%s]type[%d]vs[%s]\n",__LINE__,qPrintable(srcPart),qPrintable(dstPart),type,info.type);
+
+            partRestore(type,
+                        qPrintable(srcPart),
+                        qPrintable(dstPart),
+                        callBack,
+                        errorRoutine,
+                        thisPtr);
+        }
+
+
+    }
     g_progressValue = 0;
 
 cleanup:

@@ -150,7 +150,6 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
             m_srcDisk = items[1]->text();
             m_dstDisk = toItems[1]->text(); // /dev/sda
             m_timer->stop();
-            printf("\n%d,from[%s],to[%s]\n",__LINE__,qPrintable(items[1]->text()),qPrintable(toItems[1]->text()));
 
             pthread_create(&m_thread, NULL, startRoutined2d, this);
 
@@ -166,9 +165,6 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
 
     connect(this, &DiskToDiskWidget::error, [=](QString message) {
         m_isError = true;
-#ifdef DEBUG
-        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_isError << message;
-#endif
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size() > 4) {
             items[5]->setText(tr("Error"));
@@ -239,14 +235,6 @@ void DiskToDiskWidget::getDriveObjects()
             UDisksFilesystem *fsys = objPtr->filesystem();
             if (!fsys)
                 continue;
-
-            printf("%d,blk size[%llu]vs blk2 size[%llu],blk name[%s] vs blk2 name[%s]and blk2 idtype[%s]\n",
-                   __LINE__,
-                   blk->size(), blk2->size(),
-                   qPrintable(sdx),
-                   qPrintable(blk2->preferredDevice()),
-                   qPrintable(blk2->idType()));
-
             if (blk2->idType() == "swap"  ||
                 !fsys->mountPoints().isEmpty()) {
                 showFlag = false;

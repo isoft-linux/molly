@@ -34,7 +34,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+/*
+* DISKCFGFILE:[disk to disk] create this file;[file to disk] uses it;
+* DISKSTARTBIN:[disk to disk][file to disk] use it;
+*/
 #define DISKCFGFILE ".disk.cfg"
+#define DISKSTARTBIN "sdx.start.bin"
+#define DISK_CLONE_EXT_NAME ".part"
 
 typedef struct {
     unsigned long long diskSize;

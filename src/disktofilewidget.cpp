@@ -32,8 +32,6 @@
 #include <UDisks2Qt5/UDisksObject>
 #include <UDisks2Qt5/UDisksDrive>
 
-#define  PART_CLONE_EXT_NAME ".part"
-
 static UDisksClient *m_UDisksClientd2f = Q_NULLPTR;
 static QProgressBar *m_progressd2f = Q_NULLPTR;
 static pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -150,9 +148,6 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
 
     connect(this, &DiskToFileWidget::error, [=](QString message) {
         m_isError = true;
-#ifdef DEBUG
-        qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_isError << message;
-#endif
         m_isClone = true;
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size() > 4) {
@@ -188,7 +183,6 @@ DiskToFileWidget::~DiskToFileWidget()
         m_browseBtn = Q_NULLPTR;
     }
 }
-
 
 void DiskToFileWidget::getDriveObjects()
 
@@ -235,14 +229,6 @@ void DiskToFileWidget::getDriveObjects()
             UDisksFilesystem *fsys = objPtr->filesystem();
             if (!fsys)
                 continue;
-
-            printf("%d,blk size[%llu]vs blk2 size[%llu],blk name[%s] vs blk2 name[%s]and blk2 idtype[%s]\n",
-                   __LINE__,
-                   blk->size(), blk2->size(),
-                   qPrintable(sdx),
-                   qPrintable(blk2->preferredDevice()),
-                   qPrintable(blk2->idType()));
-
             if (blk2->idType() == "swap"  ||
                 !fsys->mountPoints().isEmpty()) {
                 showFlag = false;
@@ -357,7 +343,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
     }
     /*
     $ parted -s /dev/sda -- unit B print > sda.parted.txt
-    $ dd if=/dev/sda of=sda.start.bin count=256 bs=4096
+    $ dd if=/dev/sda of=sdx.start.bin count=256 bs=4096 //==>sdx.start.bin=DISKSTARTBIN
     $ ./test-libpartclone-ntfs -d -c -s /dev/sda1 -o /backup/sda1.img
     $ ./test-libpartclone-extfs -d -c -s /dev/sda2 -o /backup/sda2.img
     */
@@ -366,7 +352,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
             dstPath + "/" + srcDisk.mid(5) + ".parted.txt ";
     system(qPrintable(cmd));
     cmd = "/usr/bin/dd if=" + srcDisk + " of=" +dstPath + "/" +
-            srcDisk.mid(5) + ".start.bin" + " count=256 bs=4096 ";
+            DISKSTARTBIN + " count=256 bs=4096 ";
     backupOK = system(qPrintable(cmd));
     if (backupOK != 0) {
         //error
@@ -440,7 +426,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
         diskNumber ++;
 
         if (type != LIBPARTCLONE_UNKNOWN) {
-            QString dst = dstPath + "/" + it.key().mid(5) + PART_CLONE_EXT_NAME;
+            QString dst = dstPath + "/" + it.key().mid(5) + DISK_CLONE_EXT_NAME;
 
             printf("%d,will clone[%s]to[%s]\n",
                    __LINE__,
@@ -458,7 +444,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
             }
         } else {
             // meet [permission denied]!!!
-            QString dst = dstPath + "/" + it.key().mid(5) + PART_CLONE_EXT_NAME + ".dd";
+            QString dst = dstPath + "/" + it.key().mid(5) + DISK_CLONE_EXT_NAME + ".dd";
             cmd = "/usr/bin/dd if=" + it.key() + " of=" + dst + " bs=4096 ";
 
             printf("%d,will use dd to clone[%s]to[%s],dd cmd[%s]\n",

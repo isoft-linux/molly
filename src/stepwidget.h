@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2017 Leslie Zhai <xiang.zhai@i-soft.com.cn>
+ * Copyright (C) 2017 fj <fujiang.zhu@i-soft.com.cn>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
