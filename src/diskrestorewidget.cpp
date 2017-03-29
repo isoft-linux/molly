@@ -69,7 +69,7 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
     auto *label = new QLabel(tr("Please choose the Disk:"));
     hbox->addWidget(label);
     vbox->addLayout(hbox);
-    m_label = new QLabel(tr("Will copy to:"));
+    m_label = new QLabel;
     m_table = new QTableWidget;
     QStringList headers {tr("Name"), tr("Disk"), tr("Serial"), tr("Size"), tr("UsedSize"), tr("State")};
     m_table->setColumnCount(headers.size()+1);
@@ -83,9 +83,7 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
     connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size()) {
-            m_label->setText(m_srcDiskPath + " " + tr("Will be restored to:"));
-            char src[32]="";
-            snprintf(src,sizeof(src),"%s",qPrintable(items[3]->text()));
+            m_label->setText(m_srcDiskPath + " " + tr("Will be restored to:") + items[1]->text());
         }
     });
     vbox->addWidget(m_table);
@@ -379,15 +377,26 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
         QString dstPart = "";
         QString sdx = "";
         QString ddStr = QString(DISK_CLONE_EXT_NAME) + QString(".dd");
+        char sdNum[256]="";
+        int number = 0;
         if (parts.at(i).contains(ddStr) ) {
             sdx = parts.at(i).left(parts.at(i).size() - ddStr.size());
-            cmd = "/usr/bin/dd if=" + srcPart + " of=" + dstPath + "/" + sdx + " bs=4096 ";
+            snprintf(sdNum,sizeof(sdNum),"%s",qPrintable(sdx));
+            for (int j = 0; j < strlen(sdNum); j++) {
+                number = atoi((const char *)&sdNum[j]);
+                if (number == 0) {
+                    continue;
+                } else {
+                    break;
+                }
+            }
+            dstPart = dstPath + QString::number(number);
+            cmd = "/usr/bin/dd if=" + srcPart + " of=" + dstPart + " bs=4096 ";
             printf("%d,no.2,dd[%s]\n",__LINE__,qPrintable(cmd));
             system(qPrintable(cmd));
         } else {
             sdx = parts.at(i).left(parts.at(i).size() - strlen(DISK_CLONE_EXT_NAME) );
-            char sdNum[256]="";
-            int number = 0;
+
             snprintf(sdNum,sizeof(sdNum),"%s",qPrintable(sdx));
             for (int j = 0; j < strlen(sdNum); j++) {
                 number = atoi((const char *)&sdNum[j]);
@@ -411,9 +420,9 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
                 type = LIBPARTCLONE_EXTFS;
             else if (strType.compare("ntfs",Qt::CaseInsensitive) == 0)
                 type = LIBPARTCLONE_NTFS;
-            else if (strType.compare("fat",Qt::CaseInsensitive) == 0)
+            else if (strType.startsWith("fat",Qt::CaseInsensitive) == 0)
                 type = LIBPARTCLONE_FAT;
-            else if (strType.compare("vfat",Qt::CaseInsensitive) == 0)
+            else if (strType.startsWith("vfat",Qt::CaseInsensitive) == 0)
                 type = LIBPARTCLONE_FAT;
             else if (strType.compare("exfat",Qt::CaseInsensitive) == 0)
                 type = LIBPARTCLONE_EXFAT;
