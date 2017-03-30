@@ -51,18 +51,19 @@ FileToDiskWidget::FileToDiskWidget(UDisksClient *oUDisksClient,QWidget *parent, 
 
     auto *vbox = new QVBoxLayout;
     auto *hbox = new QHBoxLayout;
-    auto *label = new QLabel(tr("Please choose the Disk:"));
+    auto *label = new QLabel(tr("Please choose the disk files:"));
     hbox->addWidget(label);
     m_combo = new QComboBox;
     hbox->addWidget(m_combo);
     vbox->addLayout(hbox);
     m_treeWidget = new QTreeWidget;
 
-    QStringList headers {tr("Disk"), tr("Size"),tr("State")};
+    QStringList headers {tr("Disk"), tr("Size")};
     m_treeWidget->setColumnCount(headers.size());
     m_treeWidget->setHeaderLabels(headers);
     m_treeWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_treeWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_treeWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents );
     m_browseBtn = new QPushButton(tr("Browse"));
     m_nextBtn = new QPushButton(tr("Next"));
     m_edit = new QLineEdit;
@@ -115,10 +116,8 @@ void FileToDiskWidget::setSelectedItem(QTreeWidgetItem *item,int index)
     QTreeWidgetItem *parent = item->parent();
     if(NULL==parent) {
         m_edit->setText(item->text(0));
-        printf("\nroot [%d],[%s][%s][%s]\n",index,qPrintable(item->text(0)),qPrintable(item->text(1)),qPrintable(item->text(2)));
         return;
     }
-    printf("\n[%d],[%s]\n",index,qPrintable(parent->text(0)));
 }
 
 const QString udisksDBusPathPrefix = "/org/freedesktop/UDisks2/block_devices/";
@@ -179,7 +178,7 @@ void FileToDiskWidget::comboTextChanged(QString text)
 
                 QStringList list;
                 QFile rootFile(imgPath);
-                list << QString(imgPath) << QString(sSize) << "not backuped";
+                list << QString(imgPath) << QString(sSize);
                 QTreeWidgetItem *rootNode = new QTreeWidgetItem(m_treeWidget,list);
                 list.clear();
 

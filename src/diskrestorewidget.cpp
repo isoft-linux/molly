@@ -43,7 +43,6 @@ static pthread_t m_thread;
 static QString m_srcDisk = "";
 static QString m_dstDisk = "";
 static int g_progressValue = 0;
-
 DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
                                    UDisksClient *oUDisksClient,
                                    QWidget *parent,
@@ -52,12 +51,6 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
       m_OSMap(OSMap)
 {
     m_UDisksClientd2f = oUDisksClient;
-    connect(m_UDisksClientd2f, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
-        getDriveObjects(0ULL);
-    });
-    connect(m_UDisksClientd2f, &UDisksClient::objectRemoved, [=](const UDisksObject::Ptr &object) {
-        getDriveObjects(0ULL);
-    });
     connect(m_UDisksClientd2f, &UDisksClient::objectsAvailable, [=]() {
         getDriveObjects(0ULL);
     });
@@ -72,7 +65,7 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
     m_label = new QLabel;
     m_table = new QTableWidget;
     QStringList headers {tr("Name"), tr("Disk"), tr("Serial"), tr("Size"), tr("UsedSize"), tr("State")};
-    m_table->setColumnCount(headers.size()+1);
+    m_table->setColumnCount(headers.size());
     m_table->hideColumn(headers.size());
     m_table->setHorizontalHeaderLabels(headers);
     m_table->verticalHeader()->setVisible(false);
@@ -83,7 +76,7 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
     connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size()) {
-            m_label->setText(m_srcDiskPath + " " + tr("Will be restored to:") + items[1]->text());
+            m_label->setText(m_srcDiskPath + " " + tr("will be restored to:") + items[1]->text());
         }
     });
     vbox->addWidget(m_table);
@@ -105,6 +98,7 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
             m_cloneBtn->setEnabled(false);
             m_dstDisk = items[1]->text();
             m_timer->stop();
+            m_isError = false;
             printf("\n%d,disk restore,src[%s]dst[%s]\n",__LINE__,qPrintable(m_srcDisk),qPrintable(m_dstDisk));
 
             pthread_create(&m_thread, NULL, startRoutined2d, this);
@@ -132,7 +126,7 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
     });
     connect(this, &DiskRestoreWidget::finished, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
-        if (!m_isError && items.size() > 4) {
+        if (!m_isError && items.size() ) {
             items[5]->setText(tr("Finished"));
         }
         m_progressd2f->setVisible(false);
@@ -155,7 +149,7 @@ void DiskRestoreWidget::setSrcDiskPath(QString srcDiskPath)
     comboTextChanged(m_srcDiskPath);
 
     m_srcDisk = m_srcDiskPath;
-    m_label->setText(m_srcDiskPath + " " + tr("Will be restored to:"));
+    m_label->setText(m_srcDiskPath + " " + tr("will be restored to:"));
 }
 
 void DiskRestoreWidget::comboTextChanged(QString text)
@@ -179,7 +173,6 @@ void DiskRestoreWidget::comboTextChanged(QString text)
 }
 
 void DiskRestoreWidget::getDriveObjects(unsigned long long srcDiskSize)
-
 {
     m_table->setRowCount(0);
     m_table->clearContents();
@@ -257,18 +250,9 @@ void DiskRestoreWidget::getDriveObjects(unsigned long long srcDiskSize)
         isDiskAbleToShow(showFlag,item);
         m_table->setItem(row, 4, item);
 
-        item = new QTableWidgetItem(QString("not backup"));
+        item = new QTableWidgetItem(QString("not restored"));
         isDiskAbleToShow(showFlag,item);
         m_table->setItem(row, 5, item);
-
-        QString showStr ="";
-        if (showFlag) {
-            showStr = "1";
-        } else
-            showStr = "0";
-        item = new QTableWidgetItem(showStr);
-        isDiskAbleToShow(showFlag,item);
-        m_table->setItem(row, 6, item);
 
         row++;
     }
@@ -308,18 +292,6 @@ static void *callBackd2f(void *percent, void *remaining)
             m_progressd2f->setValue(per);
             m_progressd2f->setFormat(QString::number(per) + "% " + QString(str));
         }
-    }
-    pthread_mutex_unlock(&m_mutex);
-    return Q_NULLPTR;
-}
-static void *callBack(void *percent, void *remaining)
-{
-    pthread_mutex_trylock(&m_mutex);
-    float *value = (float *)percent;
-    char *str = (char *)remaining;
-    if (m_progressd2f) {
-        m_progressd2f->setValue((int)*value);
-        m_progressd2f->setFormat(QString::number((int)*value) + "% " + QString(str));
     }
     pthread_mutex_unlock(&m_mutex);
     return Q_NULLPTR;
@@ -436,7 +408,7 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
             partRestore(type,
                         qPrintable(srcPart),
                         qPrintable(dstPart),
-                        callBack,
+                        callBackd2f,
                         errorRoutine,
                         thisPtr);
         }
