@@ -82,8 +82,10 @@ FileToDiskWidget::FileToDiskWidget(UDisksClient *oUDisksClient,QWidget *parent, 
         QString fileName = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
                 QStandardPaths::writableLocation(QStandardPaths::HomeLocation),
                 QFileDialog::DontResolveSymlinks);
-        m_edit->setText(fileName);
-        m_nextBtn->setEnabled(true);
+        if (!fileName.isEmpty()) {
+            m_edit->setText(fileName);
+            m_nextBtn->setEnabled(true);
+        }
     });
 
     m_browseBtn->setEnabled(true);
