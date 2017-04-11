@@ -123,6 +123,7 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
         m_cloneBtn->setEnabled(true);
         m_table->setEnabled(true);
         backBtn->setEnabled(true);
+        m_label->setText(message);
     });
     connect(this, &DiskRestoreWidget::finished, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
@@ -386,7 +387,8 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
             partType type = LIBPARTCLONE_UNKNOWN;
             if (info.type[0] == 0) {
                 printf("\n\n%d,part[%s] file format error!!!\n\n\n",__LINE__,qPrintable(srcPart));
-                continue;
+                Q_EMIT thisPtr->error(tr("Part file[%1] format error,exit.").arg(srcPart));
+                break;
             }
             if (strType.startsWith("ext",Qt::CaseInsensitive))
                 type = LIBPARTCLONE_EXTFS;
