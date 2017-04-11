@@ -318,6 +318,7 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
     QString cmd;
     QDir diskDir = QDir(srcDisk);
     QList<QString> parts;
+    bool done = false;
 
     if (m_dstDisk.isEmpty() || m_srcDisk.isEmpty())
         goto cleanup;
@@ -366,7 +367,10 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
             dstPart = dstPath + QString::number(number);
             cmd = "/usr/bin/dd if=" + srcPart + " of=" + dstPart + " bs=4096 ";
             printf("%d,no.2,dd[%s]\n",__LINE__,qPrintable(cmd));
-            system(qPrintable(cmd));
+            int ret = system(qPrintable(cmd));
+            if (ret == 0) {
+                done = true;
+            }
         } else {
             sdx = parts.at(i).left(parts.at(i).size() - strlen(DISK_CLONE_EXT_NAME) );
 
@@ -388,6 +392,7 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
             if (info.type[0] == 0) {
                 printf("\n\n%d,part[%s] file format error!!!\n\n\n",__LINE__,qPrintable(srcPart));
                 Q_EMIT thisPtr->error(tr("Part file[%1] format error,exit.").arg(srcPart));
+                done = false;
                 break;
             }
             if (strType.startsWith("ext",Qt::CaseInsensitive))
@@ -413,14 +418,17 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
                         callBackd2f,
                         errorRoutine,
                         thisPtr);
+            done = true;
         }
-
-
     }
     g_progressValue = 0;
 
 cleanup:
-    Q_EMIT thisPtr->finished();
+    if (!done) {
+        Q_EMIT thisPtr->error(tr("Restore failed!"));
+    } else {
+        Q_EMIT thisPtr->finished();
+    }
 
     pthread_detach(pthread_self());
     return Q_NULLPTR;

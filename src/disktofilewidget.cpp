@@ -355,7 +355,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
             DISKSTARTBIN + " count=256 bs=4096 ";
     backupOK = system(qPrintable(cmd));
     if (backupOK != 0) {
-        //error
+        goto cleanup;
     }
 
     for (const UDisksObject::Ptr drvPtr : m_UDisksClientd2f->getObjects(UDisksObject::Drive)) {
@@ -440,7 +440,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
                   errorRoutine,
                   thisPtr);
             if (backupOK != 0) {
-                //error
+                goto cleanup;
             }
         } else {
             // meet [permission denied]!!!
@@ -457,7 +457,7 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
             g_progressValue = 0;
 
             if (backupOK != 0) {
-                //error
+                goto cleanup;
             }
         }
     }
@@ -475,9 +475,10 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
 cleanup:
 
     if (backupOK != 0) {
-        printf("%d,disktofile:error!!!\n",__LINE__);
+        Q_EMIT thisPtr->error(tr("Disk backup failed!"));
+    } else {
+        Q_EMIT thisPtr->finished();
     }
-    Q_EMIT thisPtr->finished();
 
     pthread_detach(pthread_self());
     return Q_NULLPTR;
