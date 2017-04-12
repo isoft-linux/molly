@@ -183,7 +183,8 @@ void FileToPartWidget::comboTextChanged(QString text)
                 item = new QTableWidgetItem(QString(info.type));
                 m_table->setItem(row, 1, item);
 
-                item = new QTableWidgetItem(QString(info.devSize));
+                // todo:to format size to ??
+                item = new QTableWidgetItem(QString::number(info.devSize));
                 m_table->setItem(row, 2, item);
                 row++;
             }
