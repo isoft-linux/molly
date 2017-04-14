@@ -53,12 +53,14 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
       m_OSMap(OSMap)
 {
     m_UDisksClientd2f = oUDisksClient;
+    /*
     connect(m_UDisksClientd2f, &UDisksClient::objectAdded, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
     });
     connect(m_UDisksClientd2f, &UDisksClient::objectRemoved, [=](const UDisksObject::Ptr &object) {
         getDriveObjects();
     });
+    */
     connect(m_UDisksClientd2f, &UDisksClient::objectsAvailable, [=]() {
         getDriveObjects();
     });
@@ -169,6 +171,10 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
         if (items.size() > 4) {
             items[5]->setText(tr("Error"));
         }
+        items = m_toTable->selectedItems();
+        if (!m_isError && items.size() > 4) {
+            items[5]->setText(tr("Error"));
+        }
         m_progressd2f->setVisible(false);
         m_cloneBtn->setEnabled(true);
         m_table->setEnabled(true);
@@ -177,6 +183,10 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
     connect(this, &DiskToDiskWidget::finished, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (!m_isError && items.size() > 4) {
+            items[5]->setText(tr("Finished"));
+        }
+        items = m_toTable->selectedItems();
+        if (items.size() > 4) {
             items[5]->setText(tr("Finished"));
         }
         m_progressd2f->setVisible(false);
