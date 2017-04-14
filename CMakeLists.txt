@@ -53,7 +53,7 @@ endif()
 find_package(udisks2qt5 REQUIRED)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBPARTCLONE REQUIRED partclone-0.3.5)
+pkg_check_modules(LIBPARTCLONE REQUIRED libpartclone)
 
 find_package(OpenMP)
 set_package_properties(OpenMP PROPERTIES DESCRIPTION "The OpenMP libraries"
