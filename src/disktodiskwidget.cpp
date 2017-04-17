@@ -140,6 +140,7 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
     hbox = new QHBoxLayout;
     m_progressd2f = new QProgressBar;
     vbox->addWidget(m_progressd2f);
+    m_backBtn = new QPushButton(tr("Back"));
 
     m_progressd2f->setVisible(false);
     connect(m_cloneBtn, &QPushButton::clicked, [=]() {
@@ -149,6 +150,7 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
             m_progressd2f->setVisible(true);
             m_progressd2f->setValue(0);
             m_cloneBtn->setEnabled(false);
+            m_backBtn->setEnabled(false);
             m_srcDisk = items[1]->text();
             m_dstDisk = toItems[1]->text(); // /dev/sda
             m_timer->stop();
@@ -159,9 +161,8 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
         }
     });
     hbox->addWidget(m_cloneBtn);
-    auto *backBtn = new QPushButton(tr("Back"));
-    connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
-    hbox->addWidget(backBtn);
+    connect(m_backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
+    hbox->addWidget(m_backBtn);
     vbox->addLayout(hbox);
     setLayout(vbox);
 
@@ -178,7 +179,7 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
         m_progressd2f->setVisible(false);
         m_cloneBtn->setEnabled(true);
         m_table->setEnabled(true);
-        backBtn->setEnabled(true);
+        m_backBtn->setEnabled(true);
     });
     connect(this, &DiskToDiskWidget::finished, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
@@ -192,7 +193,7 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
         m_progressd2f->setVisible(false);
         m_cloneBtn->setEnabled(true);
         m_table->setEnabled(true);
-        backBtn->setEnabled(true);
+        m_backBtn->setEnabled(true);
     });
 }
 

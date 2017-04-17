@@ -60,6 +60,7 @@ private:
     QTableWidget *m_toTable = Q_NULLPTR;
     QTableWidget *m_table = Q_NULLPTR;
     QPushButton *m_cloneBtn = Q_NULLPTR;
+    QPushButton *m_backBtn = Q_NULLPTR;
     OSMapType m_OSMap;
     QProgressBar *m_progress;
     bool m_isError = false;

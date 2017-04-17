@@ -58,7 +58,7 @@ FileToDiskWidget::FileToDiskWidget(UDisksClient *oUDisksClient,QWidget *parent, 
     vbox->addLayout(hbox);
     m_treeWidget = new QTreeWidget;
 
-    QStringList headers {tr("Disk"), tr("Size")};
+    QStringList headers {tr("Disk file path"), tr("Size")};
     m_treeWidget->setColumnCount(headers.size());
     m_treeWidget->setHeaderLabels(headers);
     m_treeWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -174,6 +174,9 @@ void FileToDiskWidget::comboTextChanged(QString text)
                 memset(&cfgInfo,0,sizeof(diskcfginfo_t));
                 if (getDiskCfgInfo(qPrintable(cfgPath),&cfgInfo) != 0) {
                     //meet error
+                }
+                if (cfgInfo.diskSize < 1ULL) {
+                    continue;
                 }
                 char sSize[32]="";
                 format_size(cfgInfo.diskSize,sSize);
