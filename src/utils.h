@@ -33,14 +33,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <signal.h>
 
 /*
 * DISKCFGFILE:[disk to disk] create this file;[file to disk] uses it;
 * DISKSTARTBIN:[disk to disk][file to disk] use it;
+* CANCEL_DD_STR:[disk to file] to cancel dd.
 */
 #define DISKCFGFILE ".disk.cfg"
 #define DISKSTARTBIN "sdx.start.bin"
 #define DISK_CLONE_EXT_NAME ".part"
+#define CANCEL_DD_STR "cancel"
 
 typedef struct {
     unsigned long long diskSize;

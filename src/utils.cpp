@@ -290,17 +290,18 @@ int monitor_processes(const char *cmd,char *pos,char *tsize)
     off_t max_size;
     char fsize[64];
     char fpos[64];
-    char ftroughput[64];
+    char action[64];
     float perc;
     signed char still_there;
     signed char search_all = 1;
     static signed char first_pass = 1;
 
+    strcpy(action,"dd");
     first_pass = 0;
     search_all = 0;
     pidinfo_t pidinfo;
     memset(&pidinfo,0,sizeof(pidinfo_t));
-    fd_count = find_fd_for_pid(cmd,fdnum_list, MAX_FD_PER_PID,&pidinfo);
+    fd_count = find_fd_for_pid(action,fdnum_list, MAX_FD_PER_PID,&pidinfo);
 
     max_size = 0;
     //printf("\n fd_count[%d]\n",fd_count);
@@ -331,6 +332,10 @@ int monitor_processes(const char *cmd,char *pos,char *tsize)
         fpos,
         fsize);
 #endif
+    if (strcmp(cmd,CANCEL_DD_STR) ==0) {
+        kill(pidinfo.pid,SIGKILL);
+        return 0;
+    }
     snprintf(pos,31,"%s",fpos);
     snprintf(tsize,31,"%s",fsize);
     return (int)perc;

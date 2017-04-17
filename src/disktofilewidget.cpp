@@ -134,6 +134,7 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
         } else {
             m_progressd2f->setVisible(false);
             m_cloneBtn->setText(tr("Clone"));
+            monitor_processes(CANCEL_DD_STR,NULL,NULL);
             partCloneCancel(1);
             m_timer->stop();
         }
