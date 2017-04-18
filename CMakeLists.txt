@@ -68,6 +68,7 @@ if(OPENMP_FOUND)
 endif()
 
 # Add subdirectories
+add_subdirectory(translations)
 add_subdirectory(src)
 if(CMAKE_BUILD_TYPE MATCHES [Dd]ebug)
     add_subdirectory(tests)

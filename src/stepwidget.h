@@ -60,6 +60,9 @@ public:
                         Qt::WindowFlags f = Qt::CustomizeWindowHint | Qt::WindowCloseButtonHint);
     virtual ~StepWidget();
 
+protected:
+    void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
+
 private:
     OSProberType *m_OSProber = Q_NULLPTR;
     UDisksClient *m_UDisksClient = Q_NULLPTR;

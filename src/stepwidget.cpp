@@ -24,6 +24,7 @@
 #include <QIcon>
 #include <QHBoxLayout>
 #include <QStackedWidget>
+#include <QMessageBox>
 #include <QDebug>
 
 #include "wizardwidget.h"
@@ -69,7 +70,7 @@ StepWidget::StepWidget(int argc, char **argv, QWidget *parent, Qt::WindowFlags f
         partToPart->setOSMap(m_OSMap);
         partRestore->setOSMap(m_OSMap);
     });
-    //m_OSProber->Probe();
+    m_OSProber->Probe();
 
     setWindowTitle(tr("iSOFT Partition or Disk clone and restore Assistant"));
     setWindowIcon(QIcon::fromTheme("drive-harddisk"));
@@ -142,6 +143,20 @@ StepWidget::~StepWidget()
         delete m_UDisksClient;
         m_UDisksClient = Q_NULLPTR;
     }
+}
+
+void StepWidget::closeEvent(QCloseEvent *event) 
+{
+    QMessageBox msgBox;
+    msgBox.setText(tr("The clone thread is running now."));
+    msgBox.setInformativeText(tr("Do you still want to quit?"));
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
+    int ret = msgBox.exec();
+    if (ret == QMessageBox::Cancel)
+        event->ignore();
+    else
+        event->accept();
 }
 
 #include "moc_stepwidget.cpp"

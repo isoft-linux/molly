@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2017 Leslie Zhai <xiang.zhai@i-soft.com.cn>
+ * Copyright (C) 2014 AnthonOS Open Source Community
+ * Copyright (C) 2014 - 2017 Leslie Zhai <xiang.zhai@i-soft.com.cn>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,20 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <QApplication>
+#ifndef I18N_H
+#define I18N_H
 
-#include "i18n.h"
-#include "stepwidget.h"
+#include <QTranslator>
 
-int main(int argc, char *argv[])
+class I18N
 {
-    QApplication app(argc, argv);
-    app.setApplicationName("molly");
-    app.setOrganizationDomain("isoftlinux.org");
-    app.setApplicationVersion(PROJECT_VERSION);
-    I18N i18n("translations", "UTF-8");
-    i18n.translate();
-    StepWidget step(argc, argv);
-    step.show();
-    return app.exec();
-}
+public:
+    I18N(const QString & path, const QString & encoding);
+
+    QString getPath() const;
+    void setPath(const QString & path);
+
+    QString getEncoding() const;
+    void setEncoding(const QString & encoding);
+
+    void translate();
+
+private:
+    QString m_path, m_encoding;
+    QTranslator m_apTranslator, m_qtTranslator;
+};
+
+#endif // I18N_H
