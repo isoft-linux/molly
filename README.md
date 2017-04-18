@@ -1,4 +1,4 @@
-# molly
+# [molly](http://ghost-movie.wikia.com/wiki/Molly_Jenson)
 
 Open source alternative for [Ghost](https://en.wikipedia.org/wiki/Ghost_(software)).
 
