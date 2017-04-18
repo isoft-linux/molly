@@ -7,6 +7,7 @@ include_directories(
 
 set(molly_PART_SRCS
     main.cpp
+    i18n.cpp
     stepwidget.cpp
     wizardwidget.cpp
     partclonewidget.cpp

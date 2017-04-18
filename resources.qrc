@@ -1,5 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="/">
+  <file>translations/zh_CN.qm</file>
   <file>data/background.png</file>
   <file>data/partition-to-file.png</file>
   <file>data/partition-to-partition.png</file>
