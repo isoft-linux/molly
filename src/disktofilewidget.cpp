@@ -462,6 +462,22 @@ void *DiskToFileWidget::startRoutined2f(void *arg)
             }
         }
     }
+    // can not find any partitions on disk, so, dd all disk.
+    if (diskNumber == 0) {
+        QString dst = dstPath + "/" + srcDisk.mid(5) + DISK_CLONE_EXT_NAME + ".dd";
+        cmd = "/usr/bin/dd if=" + srcDisk + " of=" + dst  +" bs=4096 ";
+
+        printf("%d,will use dd to clone,dd cmd[%s]\n",
+               __LINE__,qPrintable(cmd));
+
+        g_progressValue = 1;
+        backupOK = system(qPrintable(cmd));
+        g_progressValue = 0;
+
+        if (backupOK != 0) {
+            goto cleanup;
+        }
+    }
     disksMap.clear();
     backupOK = 0;
 

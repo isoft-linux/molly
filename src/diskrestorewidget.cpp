@@ -352,7 +352,7 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
         QString sdx = "";
         QString ddStr = QString(DISK_CLONE_EXT_NAME) + QString(".dd");
         char sdNum[256]="";
-        int number = 0;
+        int number = -1;
         if (parts.at(i).contains(ddStr) ) {
             sdx = parts.at(i).left(parts.at(i).size() - ddStr.size());
             snprintf(sdNum,sizeof(sdNum),"%s",qPrintable(sdx));
@@ -364,7 +364,11 @@ void *DiskRestoreWidget::startRoutined2d(void *arg)
                     break;
                 }
             }
-            dstPart = dstPath + QString::number(number);
+            if (number == 0) {
+                dstPart = dstPath;
+            } else {
+                dstPart = dstPath + QString::number(number);
+            }
             cmd = "/usr/bin/dd if=" + srcPart + " of=" + dstPart + " bs=4096 ";
             printf("%d,no.2,dd[%s]\n",__LINE__,qPrintable(cmd));
             int ret = system(qPrintable(cmd));

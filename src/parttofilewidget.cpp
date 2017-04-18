@@ -119,6 +119,9 @@ PartToFileWidget::PartToFileWidget(UDisksClient *oUDisksClient,
     auto *backBtn = new QPushButton(tr("Back"));
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     connect(m_cloneBtn, &QPushButton::clicked, [=]() {
+        if (m_edit->text().isEmpty()) {
+            return;
+        }
         m_isError = false;
 #ifdef DEBUG
         qDebug() << "DEBUG:" << __PRETTY_FUNCTION__ << m_isClone;
