@@ -74,7 +74,7 @@ PartToFileWidget::PartToFileWidget(UDisksClient *oUDisksClient,
     m_edit = new QLineEdit;
     connect(m_edit, &QLineEdit::textChanged, [=](const QString &text) {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
-        m_cloneBtn->setEnabled(items.size() && ImgDialog::isPathWritable(text));
+        m_cloneBtn->setEnabled(items.size() && ImgDialog::isPathWritable(text) && (!m_edit->text().isEmpty()));
     });
     connect(m_browseBtn, &QPushButton::clicked, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
