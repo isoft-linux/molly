@@ -61,6 +61,7 @@ private:
     QTableWidget *m_table = Q_NULLPTR;
     QPushButton *m_browseBtn = Q_NULLPTR;
     QPushButton *m_cloneBtn = Q_NULLPTR;
+    QLineEdit   *m_edit = Q_NULLPTR;
     OSMapType m_OSMap;
     QProgressBar *m_progress;
     bool m_isClone = true;

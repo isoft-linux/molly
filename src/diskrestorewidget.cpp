@@ -72,11 +72,14 @@ DiskRestoreWidget::DiskRestoreWidget(OSMapType OSMap,
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     m_cloneBtn = new QPushButton(tr("Restore"));
-
+    m_cloneBtn->setEnabled(false);
     connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size()) {
             m_label->setText(m_srcDiskPath + " " + tr("will be restored to:") + items[1]->text());
+            m_cloneBtn->setEnabled(true);
+        } else {
+            m_cloneBtn->setEnabled(false);
         }
     });
     vbox->addWidget(m_table);

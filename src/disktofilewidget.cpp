@@ -74,10 +74,11 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     m_browseBtn = new QPushButton(tr("Browse"));
     m_cloneBtn = new QPushButton(tr("Clone"));
-    auto *edit = new QLineEdit;
-    connect(edit, &QLineEdit::textChanged, [=](const QString &text) {
+    m_cloneBtn->setEnabled(false);
+    m_edit = new QLineEdit;
+    connect(m_edit, &QLineEdit::textChanged, [=](const QString &text) {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
-        m_cloneBtn->setEnabled(items.size() && ImgDialog::isPathWritable(text));
+        m_cloneBtn->setEnabled(items.size() && ImgDialog::isPathWritable(text) && (!m_edit->text().isEmpty()) );
     });
     connect(m_browseBtn, &QPushButton::clicked, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
@@ -90,7 +91,7 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
                 // todo: path is /xx/yy/zz/
                 printf("\ntrace:%d,will clont[%s] to [%s].\n",__LINE__,qPrintable(items[1]->text()),qPrintable(path));
                 dlg->close();
-                edit->setText(path);
+                m_edit->setText(path);
             });
             dlg->exec();
         }
@@ -101,14 +102,14 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size()) {
             m_browseBtn->setEnabled(true);
-            edit->setText("");
+            m_edit->setText("");
         }
     });
     vbox->addWidget(m_table);
     hbox = new QHBoxLayout;
     label = new QLabel(tr("Partition image save path:"));
     hbox->addWidget(label);
-    hbox->addWidget(edit);
+    hbox->addWidget(m_edit);
     hbox->addWidget(m_browseBtn);
     vbox->addLayout(hbox);
     hbox = new QHBoxLayout;
@@ -119,12 +120,12 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
     connect(m_cloneBtn, &QPushButton::clicked, [=]() {
         if (m_isClone) {
             QList<QTableWidgetItem *> items = m_table->selectedItems();
-            if (items.size() && ImgDialog::isPathWritable(edit->text())) {
+            if (items.size() && ImgDialog::isPathWritable(m_edit->text())) {
                 m_progressd2f->setVisible(true);
                 m_progressd2f->setValue(0);
                 m_cloneBtn->setText(tr("Cancel"));
                 m_part = items[1]->text(); // /dev/sda
-                m_img = edit->text(); // path[/home/test/]
+                m_img = m_edit->text(); // path[/home/test/]
                 m_timer->stop();
 
                 pthread_create(&m_thread, NULL, startRoutined2f, this);
@@ -158,7 +159,7 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
         m_cloneBtn->setText(tr("Clone"));
         m_table->setEnabled(true);
         m_browseBtn->setEnabled(true);
-        edit->setEnabled(true);
+        m_edit->setEnabled(true);
         backBtn->setEnabled(true);
     });
     connect(this, &DiskToFileWidget::finished, [=]() {
@@ -172,7 +173,7 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
         m_cloneBtn->setEnabled(true);
         m_table->setEnabled(true);
         m_browseBtn->setEnabled(true);
-        edit->setEnabled(true);
+        m_edit->setEnabled(true);
         backBtn->setEnabled(true);
     });
 }

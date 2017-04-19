@@ -81,8 +81,15 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_toTable = new QTableWidget;
+    m_toTable->setColumnCount(headers.size()+1);
+    m_toTable->hideColumn(headers.size());
+    m_toTable->setHorizontalHeaderLabels(headers);
+    m_toTable->verticalHeader()->setVisible(false);
+    m_toTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_toTable->setSelectionMode(QAbstractItemView::SingleSelection);
     m_cloneBtn = new QPushButton(tr("Clone"));
-
+    m_cloneBtn->setEnabled(false);
     connect(m_table, &QTableWidget::itemSelectionChanged, [=]() {
         QList<QTableWidgetItem *> items = m_table->selectedItems();
         if (items.size()) {
@@ -121,19 +128,27 @@ DiskToDiskWidget::DiskToDiskWidget(OSMapType OSMap,
                     }
                 }
             }
+            QList<QTableWidgetItem *> items2 = m_toTable->selectedItems();
+            if (items2.size()) {
+                m_cloneBtn->setEnabled(true);
+            } else {
+                m_cloneBtn->setEnabled(false);
+            }
+        }
+    });
+    connect(m_toTable, &QTableWidget::itemSelectionChanged, [=]() {
+        QList<QTableWidgetItem *> items3 = m_toTable->selectedItems();
+        if (items3.size()) {
+            QList<QTableWidgetItem *> items4 = m_table->selectedItems();
+            if (items4.size()) {
+                m_cloneBtn->setEnabled(true);
+            } else {
+                m_cloneBtn->setEnabled(false);
+            }
         }
     });
     vbox->addWidget(m_table);
-
     vbox->addWidget(label);
-
-    m_toTable = new QTableWidget;
-    m_toTable->setColumnCount(headers.size()+1);
-    m_toTable->hideColumn(headers.size());
-    m_toTable->setHorizontalHeaderLabels(headers);
-    m_toTable->verticalHeader()->setVisible(false);
-    m_toTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_toTable->setSelectionMode(QAbstractItemView::SingleSelection);
     vbox->addWidget(m_toTable);
     hbox = new QHBoxLayout;
     vbox->addLayout(hbox);

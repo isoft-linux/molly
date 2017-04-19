@@ -67,6 +67,7 @@ FileToDiskWidget::FileToDiskWidget(UDisksClient *oUDisksClient,QWidget *parent, 
     m_browseBtn = new QPushButton(tr("Browse"));
     m_nextBtn = new QPushButton(tr("Next"));
     m_edit = new QLineEdit;
+    m_nextBtn->setEnabled(false);
     connect(m_edit, &QLineEdit::textChanged, [=](const QString &text) {
         QList<QTreeWidgetItem *> items = m_treeWidget->selectedItems();
         m_nextBtn->setEnabled(items.size());
