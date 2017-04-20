@@ -87,6 +87,8 @@ PartToPartWidget::PartToPartWidget(UDisksClient *oUDisksClient,
             m_fromType = items[2]->text();
             m_fromSize = items[1]->text().toLongLong(&ok);
             comboTextChanged(m_toTable, m_toCombo, m_toCombo->currentText(), PARTTO);
+        } else {
+            m_fromSize = 0ULL;
         }
     });
     connect(m_toTable, &QTableWidget::itemSelectionChanged, [=]() {
@@ -99,6 +101,8 @@ PartToPartWidget::PartToPartWidget(UDisksClient *oUDisksClient,
             m_fromType == items[2]->text() && 
             m_fromSize <= items[1]->text().toLongLong(&ok)) {
             confirmBtn->setEnabled(true);
+        } else {
+            confirmBtn->setEnabled(false);
         }
     });
     confirmBtn->setEnabled(false);
