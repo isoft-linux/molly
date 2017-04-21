@@ -59,6 +59,7 @@ private:
     static void *errorRoutine(void *arg, void *msg);
     QTableWidget *m_table = Q_NULLPTR;
     QPushButton *m_cloneBtn = Q_NULLPTR;
+    QPushButton *m_backBtn = Q_NULLPTR;
     QLabel *m_label = Q_NULLPTR;
     OSMapType m_OSMap;
     QProgressBar *m_progress;

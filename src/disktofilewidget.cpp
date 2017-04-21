@@ -115,7 +115,7 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
     hbox = new QHBoxLayout;
     m_progressd2f = new QProgressBar;
     vbox->addWidget(m_progressd2f);
-
+    auto *backBtn = new QPushButton(tr("Back"));
     m_progressd2f->setVisible(false);
     connect(m_cloneBtn, &QPushButton::clicked, [=]() {
         if (m_isClone) {
@@ -127,6 +127,7 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
                 m_part = items[1]->text(); // /dev/sda
                 m_img = m_edit->text(); // path[/home/test/]
                 m_timer->stop();
+                backBtn->setEnabled(false);
 
                 pthread_create(&m_thread, NULL, startRoutined2f, this);
 
@@ -138,11 +139,11 @@ DiskToFileWidget::DiskToFileWidget(OSMapType OSMap,
             monitor_processes(CANCEL_DD_STR,NULL,NULL);
             partCloneCancel(1);
             m_timer->stop();
+            backBtn->setEnabled(true);
         }
         m_isClone = !m_isClone;
     });
     hbox->addWidget(m_cloneBtn);
-    auto *backBtn = new QPushButton(tr("Back"));
     connect(backBtn, &QPushButton::clicked, [=]() { Q_EMIT back(); });
     hbox->addWidget(backBtn);
     vbox->addLayout(hbox);
